@@ -7,7 +7,11 @@ target_sources(hello_pio PRIVATE hello.c)
 target_link_libraries(hello_pio PRIVATE
         pico_stdlib
         hardware_pio
+	json_maker
         )
+
+pico_enable_stdio_usb(hello_pio 1)
+pico_enable_stdio_uart(hello_pio 0)
 
 pico_add_extra_outputs(hello_pio)
 

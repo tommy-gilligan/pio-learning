@@ -28,5 +28,6 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-Wno-maybe-uninitialized)
 endif()
 
+add_subdirectory(json-maker)
 # Hardware-specific examples in subdirectories:
 add_subdirectory(examples)

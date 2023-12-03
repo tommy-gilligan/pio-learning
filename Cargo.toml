@@ -17,6 +17,8 @@ panic-probe = { version = "0.3", features = ["print-defmt"] }
 rp-pico = "0.8"
 pio-proc = "0.2.2"
 pio = "0.2"
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde-json-core = "0.5.0"
 
 # but you can use any BSP. Uncomment this to use the pro_micro_rp2040 BSP instead
 # sparkfun-pro-micro-rp2040 = "0.7"

@@ -1,0 +1,6 @@
+[submodule "new"]
+	path = json-maker
+	url = https://github.com/Hossein-M98/json-maker.git
+[submodule "json-maker"]
+	path = json-maker
+	url = https://github.com/rafagafe/json-maker.git
