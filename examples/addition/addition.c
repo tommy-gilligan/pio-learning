@@ -10,6 +10,7 @@
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
 #include "addition.pio.h"
+#include "../debug.h"
 
 // Pop quiz: how many additions does the processor do when calling this function
 uint32_t do_addition(PIO pio, uint sm, uint32_t a, uint32_t b) {
@@ -27,6 +28,10 @@ int main() {
     pio_sm_config c = addition_program_get_default_config(offset);
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio, sm, true);
+
+    sleep_ms(5000);
+
+    print_pio_state();
 
     printf("Doing some random additions:\n");
     for (int i = 0; i < 10; ++i) {

@@ -42,6 +42,10 @@ impl PioStateCopy {
         }
     }
 
+    pub fn print() {
+        defmt::info!("{:?}", unsafe { PioStateCopy::new() });
+    }
+
     pub fn assert_eq(expected_json: &str) {
         let expected: PioStateCopy = serde_json_core::from_str(expected_json).unwrap().0;
         defmt::assert_eq!(unsafe { PioStateCopy::new() }, expected);
