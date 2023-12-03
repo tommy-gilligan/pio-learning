@@ -21,6 +21,9 @@ use bsp::hal::{
     sio::Sio,
     watchdog::Watchdog,
 };
+use bsp::hal::gpio::{Pin, FunctionPio0};
+use pio_proc::pio_file;
+use rp_pico::hal::pio::PIOExt;
 
 #[entry]
 fn main() -> ! {
@@ -58,16 +61,33 @@ fn main() -> ! {
     // Notably, on the Pico W, the LED is not connected to any of the RP2040 GPIOs but to the cyw43 module instead. If you have
     // a Pico W and want to toggle a LED with a simple GPIO output pin, you can connect an external
     // LED to one of the GPIO pins, and reference that pin here.
-    let mut led_pin = pins.led.into_push_pull_output();
+    let led_pin: Pin<_, FunctionPio0, _> = pins.led.into_function();
+    let led_pin_id = led_pin.id().num;
+
+    // Initialize and start PIO
+    let program_with_defines = pio_proc::pio_file!(
+        "examples/hello_pio/hello.pio",
+        select_program("hello"), // Optional if only one program in the file
+        options(max_program_size = 32) // Optional, defaults to 32
+    );
+    let program = program_with_defines.program;
+
+    let (mut pio, sm0, _, _, _) = pac.PIO0.split(&mut pac.RESETS);
+    let installed = pio.install(&program).unwrap();
+
+    let (mut sm, _, mut tx) = rp_pico::hal::pio::PIOBuilder::from_program(installed)
+        .out_pins(led_pin_id, 1)
+        .autopull(true)
+        .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
+        .build(sm0);
+    sm.set_pindirs([(led_pin_id, rp_pico::hal::pio::PinDir::Output)]);
+    sm.start();
 
     loop {
-        info!("on!");
-        led_pin.set_high().unwrap();
+        info!("on! {} ", tx.write(1));
         delay.delay_ms(500);
-        info!("off!");
-        led_pin.set_low().unwrap();
+
+        info!("off! {}", tx.write(0));
         delay.delay_ms(500);
     }
 }
-
-// End of file
