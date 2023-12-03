@@ -24,7 +24,9 @@ int main() {
     PIO pio = pio0;
     uint sm = 0;
     uint offset = pio_add_program(pio, &addition_program);
-    addition_program_init(pio, sm, offset);
+    pio_sm_config c = addition_program_get_default_config(offset);
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
 
     printf("Doing some random additions:\n");
     for (int i = 0; i < 10; ++i) {

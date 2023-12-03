@@ -37,7 +37,11 @@ int main() {
     uint offset = pio_add_program(pio, &pwm_program);
     printf("Loaded program at %d\n", offset);
 
-    pwm_program_init(pio, sm, offset, PICO_DEFAULT_LED_PIN);
+    pio_gpio_init(pio, PICO_DEFAULT_LED_PIN);
+    pio_sm_set_consecutive_pindirs(pio, sm, PICO_DEFAULT_LED_PIN, 1, true);
+    pio_sm_config c = pwm_program_get_default_config(offset);
+    sm_config_set_sideset_pins(&c, PICO_DEFAULT_LED_PIN);
+    pio_sm_init(pio, sm, offset, &c);
     pio_pwm_set_period(pio, sm, (1u << 16) - 1);
 
     int level = 0;

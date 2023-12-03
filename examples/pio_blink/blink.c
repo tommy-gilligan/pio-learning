@@ -27,7 +27,11 @@ int main() {
 }
 
 void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq) {
-    blink_program_init(pio, sm, offset, pin);
+    pio_gpio_init(pio, pin);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+    pio_sm_config c = blink_program_get_default_config(offset);
+    sm_config_set_set_pins(&c, pin, 1);
+    pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio, sm, true);
 
     printf("Blinking pin %d at %d Hz\n", pin, freq);

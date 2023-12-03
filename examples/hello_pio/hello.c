@@ -26,7 +26,20 @@ int main() {
     // none). Configure it to run our program, and start it, using the
     // helper function we included in our .pio file.
     uint sm = pio_claim_unused_sm(pio, true);
-    hello_program_init(pio, sm, offset, PICO_DEFAULT_LED_PIN);
+    pio_sm_config c = hello_program_get_default_config(offset);
+
+    // Map the state machine's OUT pin group to one pin, namely the `pin`
+    // parameter to this function.
+    sm_config_set_out_pins(&c, PICO_DEFAULT_LED_PIN, 1);
+    // Set this pin's GPIO function (connect PIO to the pad)
+    pio_gpio_init(pio, PICO_DEFAULT_LED_PIN);
+    // Set the pin direction to output at the PIO
+    pio_sm_set_consecutive_pindirs(pio, sm, PICO_DEFAULT_LED_PIN, 1, true);
+
+    // Load our configuration, and jump to the start of the program
+    pio_sm_init(pio, sm, offset, &c);
+    // Set the state machine running
+    pio_sm_set_enabled(pio, sm, true);
 
     // The state machine is now running. Any value we push to its TX FIFO will
     // appear on the LED pin.
