@@ -8,9 +8,11 @@ target_link_libraries(pio_quadrature_encoder PRIVATE
         pico_stdlib
         pico_multicore
         hardware_pio
+	json_maker
         )
 
 pico_enable_stdio_usb(pio_quadrature_encoder 1)
+pico_enable_stdio_uart(pio_quadrature_encoder 0)
 
 pico_add_extra_outputs(pio_quadrature_encoder)
 

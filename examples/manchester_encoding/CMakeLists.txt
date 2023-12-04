@@ -4,7 +4,9 @@ pico_generate_pio_header(pio_manchester_encoding ${CMAKE_CURRENT_LIST_DIR}/manch
 
 target_sources(pio_manchester_encoding PRIVATE manchester_encoding.c)
 
-target_link_libraries(pio_manchester_encoding PRIVATE pico_stdlib hardware_pio)
+target_link_libraries(pio_manchester_encoding PRIVATE pico_stdlib hardware_pio json_maker)
+pico_enable_stdio_usb(pio_manchester_encoding 1)
+pico_enable_stdio_uart(pio_manchester_encoding 0)
 pico_add_extra_outputs(pio_manchester_encoding)
 
 # add url via pico_set_program_url

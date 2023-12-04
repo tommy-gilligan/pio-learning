@@ -15,6 +15,7 @@
 #include "hardware/pio.h"
 #include "hardware/uart.h"
 #include "uart_rx.pio.h"
+#include "../debug.h"
 
 // This program
 // - Uses UART1 (the spare UART, by default) to transmit some text
@@ -106,8 +107,7 @@ static bool init_pio(const pio_program_t *program, PIO *pio_hw, uint *sm, uint *
 }
 
 int main() {
-    // Console output (also a UART, yes it's confusing)
-    setup_default_uart();
+    stdio_init_all();
     printf("Starting PIO UART RX interrupt example\n");
 
     // Set up the hard UART we're going to use to print characters

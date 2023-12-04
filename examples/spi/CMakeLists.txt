@@ -8,10 +8,13 @@ target_sources(pio_spi_flash PRIVATE
         pio_spi.h
         )
 
-target_link_libraries(pio_spi_flash PRIVATE pico_stdlib hardware_pio)
+target_link_libraries(pio_spi_flash PRIVATE pico_stdlib hardware_pio json_maker)
 pico_add_extra_outputs(pio_spi_flash)
 
 example_auto_set_url(pio_spi_flash)
+
+pico_enable_stdio_usb(pio_spi_flash 1)
+pico_enable_stdio_uart(pio_spi_flash 0)
 
 add_executable(pio_spi_loopback)
 
@@ -23,7 +26,9 @@ target_sources(pio_spi_loopback PRIVATE
         pio_spi.h
         )
 
-target_link_libraries(pio_spi_loopback PRIVATE pico_stdlib hardware_pio)
+target_link_libraries(pio_spi_loopback PRIVATE pico_stdlib hardware_pio json_maker)
 pico_add_extra_outputs(pio_spi_loopback)
 
 example_auto_set_url(pio_spi_loopback)
+pico_enable_stdio_usb(pio_spi_loopback 1)
+pico_enable_stdio_uart(pio_spi_loopback 0)

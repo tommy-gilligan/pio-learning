@@ -9,6 +9,7 @@
 
 #include "pico/stdlib.h"
 #include "pio_spi.h"
+#include "../debug.h"
 
 // This program instantiates a PIO SPI with each of the four possible
 // CPOL/CPHA combinations, with the serial input and output pin mapped to the

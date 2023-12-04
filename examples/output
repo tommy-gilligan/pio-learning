@@ -1,0 +1,3 @@
+Blinking pin 2 at 3 Hz
+{"ctrl":1,"fstat":251662080,"fdebug":16777216,"flevel":0,"irq":0,"dbg_padout":4,"dbg_padoe":4,"dbg_cfginfo":2098180,"sm0_clkdiv":65536,"sm0_execctrl":130304,"sm0_shiftctrl":786432,"sm0_addr":28,"sm0_instr":92,"sm0_pinctrl":67108928}
+Blinking pin 6 at 4 Hz

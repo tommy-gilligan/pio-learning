@@ -18,13 +18,16 @@
 // `hello_pio` instead. That example is also the subject of a tutorial in the
 // SDK book, which walks you through building your first PIO program.
 
+#include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
 
 // Our assembled program:
 #include "squarewave.pio.h"
+#include "../debug.h"
 
 int main() {
+    stdio_init_all();
     // Pick one PIO instance arbitrarily. We're also arbitrarily picking state
     // machine 0 on this PIO instance (the state machines are numbered 0 to 3
     // inclusive).

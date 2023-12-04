@@ -4,11 +4,14 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
 #include "uart_tx.pio.h"
+#include "../debug.h"
 
 int main() {
+    stdio_init_all();
     // We're going to use PIO to print "Hello, world!" on the same GPIO which we
     // normally attach UART0 to.
     const uint PIN_TX = 0;

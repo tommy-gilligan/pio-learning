@@ -4,7 +4,9 @@ pico_generate_pio_header(pio_differential_manchester ${CMAKE_CURRENT_LIST_DIR}/d
 
 target_sources(pio_differential_manchester PRIVATE differential_manchester.c)
 
-target_link_libraries(pio_differential_manchester PRIVATE pico_stdlib hardware_pio)
+target_link_libraries(pio_differential_manchester PRIVATE pico_stdlib hardware_pio json_maker)
+pico_enable_stdio_usb(pio_differential_manchester 1)
+pico_enable_stdio_uart(pio_differential_manchester 0)
 pico_add_extra_outputs(pio_differential_manchester)
 
 # add url via pico_set_program_url

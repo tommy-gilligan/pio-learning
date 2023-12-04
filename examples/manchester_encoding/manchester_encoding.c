@@ -9,6 +9,7 @@
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
 #include "manchester_encoding.pio.h"
+#include "../debug.h"
 
 // Manchester serial transmit/receive example. This transmits and receives at
 // 10 Mbps if sysclk is 120 MHz.

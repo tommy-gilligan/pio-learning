@@ -9,6 +9,7 @@
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
 #include "differential_manchester.pio.h"
+#include "../debug.h"
 
 // Differential serial transmit/receive example
 // Need to connect a wire from GPIO2 -> GPIO3

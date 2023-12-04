@@ -14,6 +14,7 @@
 #include "hardware/dma.h"
 #include "hardware/irq.h"
 #include "ws2812.pio.h"
+#include "../debug.h"
 
 #define FRAC_BITS 4
 #define NUM_PIXELS 64

@@ -23,6 +23,7 @@
 
 // Some logic to analyse:
 #include "hardware/structs/pwm.h"
+#include "../debug.h"
 
 const uint CAPTURE_PIN_BASE = 16;
 const uint CAPTURE_PIN_COUNT = 2;

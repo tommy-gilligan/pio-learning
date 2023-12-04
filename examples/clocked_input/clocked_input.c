@@ -12,6 +12,7 @@
 #include "hardware/pio.h"
 #include "hardware/spi.h"
 #include "clocked_input.pio.h"
+#include "../debug.h"
 
 // Set up a PIO state machine to shift in serial data, sampling with an
 // external clock, and push the data to the RX FIFO, 8 bits at a time.

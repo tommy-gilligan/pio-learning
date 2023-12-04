@@ -10,6 +10,7 @@
 #include "hardware/timer.h"
 
 #include "quadrature_encoder.pio.h"
+#include "../debug.h"
 
 //
 // ---- quadrature encoder interface example

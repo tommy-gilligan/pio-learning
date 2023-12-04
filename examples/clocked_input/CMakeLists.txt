@@ -8,8 +8,11 @@ target_link_libraries(pio_clocked_input PRIVATE
         pico_stdlib
         hardware_pio
         hardware_spi
+	json_maker
         )
 
+pico_enable_stdio_usb(pio_clocked_input 1)
+pico_enable_stdio_uart(pio_clocked_input 0)
 pico_add_extra_outputs(pio_clocked_input)
 
 # add url via pico_set_program_url

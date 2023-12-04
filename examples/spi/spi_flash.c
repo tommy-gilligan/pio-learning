@@ -9,6 +9,7 @@
 #include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include "pio_spi.h"
+#include "../debug.h"
 
 // This example uses PIO to erase, program and read back a SPI serial flash
 // memory.

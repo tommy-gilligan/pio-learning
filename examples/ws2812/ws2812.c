@@ -11,6 +11,7 @@
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
 #include "ws2812.pio.h"
+#include "../debug.h"
 
 #define IS_RGBW true
 #define NUM_PIXELS 150

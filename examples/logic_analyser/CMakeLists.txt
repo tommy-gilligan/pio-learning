@@ -2,7 +2,9 @@ add_executable(pio_logic_analyser)
 
 target_sources(pio_logic_analyser PRIVATE logic_analyser.c)
 
-target_link_libraries(pio_logic_analyser PRIVATE pico_stdlib hardware_pio hardware_dma)
+target_link_libraries(pio_logic_analyser PRIVATE pico_stdlib hardware_pio hardware_dma json_maker)
+pico_enable_stdio_usb(pio_logic_analyser 1)
+pico_enable_stdio_uart(pio_logic_analyser 0)
 pico_add_extra_outputs(pio_logic_analyser)
 
 # add url via pico_set_program_url

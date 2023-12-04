@@ -2,6 +2,7 @@
 
 #include "pico/stdlib.h"
 #include "pio_i2c.h"
+#include "../debug.h"
 
 #define PIN_SDA 2
 #define PIN_SCL 3

@@ -8,8 +8,11 @@ target_link_libraries(pio_uart_rx PRIVATE
         pico_stdlib
         pico_multicore
         hardware_pio
+	json_maker
         )
 
+pico_enable_stdio_usb(pio_uart_rx 1)
+pico_enable_stdio_uart(pio_uart_rx 0)
 pico_add_extra_outputs(pio_uart_rx)
 
 # add url via pico_set_program_url
@@ -24,6 +27,9 @@ target_link_libraries(pio_uart_rx_intr PRIVATE
         pico_multicore
         hardware_pio
         pico_async_context_threadsafe_background
+	json_maker
         )
 pico_add_extra_outputs(pio_uart_rx_intr)
 example_auto_set_url(pio_uart_rx_intr)
+pico_enable_stdio_usb(pio_uart_rx_intr 1)
+pico_enable_stdio_uart(pio_uart_rx_intr 0)
