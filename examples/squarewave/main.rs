@@ -5,11 +5,7 @@ use bsp::entry;
 use defmt::*;
 use defmt_rtt as _;
 use panic_probe as _;
-use rp2040_project_template::{
-    PioStateCopy,
-    SmStateCopy,
-    SM0_BASE,
-};
+use rp2040_project_template::{PioStateCopy, SmStateCopy, SM0_BASE};
 
 use rp_pico as bsp;
 
@@ -57,7 +53,7 @@ fn main() -> ! {
     let pin: rp_pico::hal::gpio::Pin<
         rp_pico::hal::gpio::bank0::Gpio2,
         FunctionPio0,
-        rp_pico::hal::gpio::PullDown
+        rp_pico::hal::gpio::PullDown,
     > = pins.gpio2.into_function();
 
     let program_with_defines = pio_proc::pio_file!(
@@ -69,33 +65,26 @@ fn main() -> ! {
 
     for (index, instruction) in program.code.iter().enumerate() {
         unsafe {
-            core::ptr::write_volatile(
-                (0x50200048 + index * 4) as *mut u32,
-                (*instruction) as u32,
-            );
+            core::ptr::write_volatile((0x50200048 + index * 4) as *mut u32, (*instruction) as u32);
         }
     }
 
     unsafe {
-        core::ptr::write_volatile(
-            0x502000c8 as *mut u32,
-            (2.5f32 * (1 << 16) as f32) as u32
-        );
+        core::ptr::write_volatile(0x502000c8 as *mut u32, (2.5f32 * (1 << 16) as f32) as u32);
         core::ptr::write_volatile(
             0x502000dc as *mut u32,
-            (1 << 26) | ((pin.id().num as u32) << 5)
+            (1 << 26) | ((pin.id().num as u32) << 5),
         );
     }
-    
+
     unsafe {
         core::ptr::write_volatile(
             0x50200000 as *mut u32,
-            core::ptr::read_volatile(0x50200000 as *mut u32) | 1
+            core::ptr::read_volatile(0x50200000 as *mut u32) | 1,
         );
     }
     // PioStateCopy::assert_eq(EXPECTED_PIO);
     // SmStateCopy::assert_eq(SM0_BASE, EXPECTED_SM);
 
-    loop {
-    }
+    loop {}
 }

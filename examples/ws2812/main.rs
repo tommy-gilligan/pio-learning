@@ -5,11 +5,7 @@ use bsp::entry;
 use defmt::*;
 use defmt_rtt as _;
 use panic_probe as _;
-use rp2040_project_template::{
-    PioStateCopy,
-    SmStateCopy,
-    SM0_BASE,
-};
+use rp2040_project_template::{PioStateCopy, SmStateCopy, SM0_BASE};
 
 use rp_pico as bsp;
 
@@ -26,7 +22,11 @@ const EXPECTED_SM: &'static str = "{\"sm_clkdiv\":983040,\"sm_execctrl\":130560,
 const EXPECTED_PIO: &'static str = "{\"ctrl\":1,\"fstat\":251662081,\"fdebug\":16777216,\"flevel\":0,\"irq\":0,\"dbg_padout\":0,\"dbg_padoe\":4,\"dbg_cfginfo\":2098180}";
 
 #[inline]
-fn put_pixel<P, S>(tx: &mut rp_pico::hal::pio::Tx<(P, S)>, pixel_grb: u32) where P: rp_pico::hal::pio::PIOExt, S: rp_pico::hal::pio::StateMachineIndex {
+fn put_pixel<P, S>(tx: &mut rp_pico::hal::pio::Tx<(P, S)>, pixel_grb: u32)
+where
+    P: rp_pico::hal::pio::PIOExt,
+    S: rp_pico::hal::pio::StateMachineIndex,
+{
     tx.write(pixel_grb << 8);
 }
 
@@ -35,7 +35,11 @@ fn urgb_u32(r: u8, g: u8, b: u8) -> u32 {
     ((r as u32) << 8) | ((g as u32) << 16) | (b as u32)
 }
 
-fn pattern_greys<P, S>(tx: &mut rp_pico::hal::pio::Tx<(P, S)>, len: usize, mut t: usize) where P: rp_pico::hal::pio::PIOExt, S: rp_pico::hal::pio::StateMachineIndex {
+fn pattern_greys<P, S>(tx: &mut rp_pico::hal::pio::Tx<(P, S)>, len: usize, mut t: usize)
+where
+    P: rp_pico::hal::pio::PIOExt,
+    S: rp_pico::hal::pio::StateMachineIndex,
+{
     let max: usize = 100; // let's not draw too much current!
     t %= max;
 
@@ -50,7 +54,11 @@ fn pattern_greys<P, S>(tx: &mut rp_pico::hal::pio::Tx<(P, S)>, len: usize, mut t
     }
 }
 
-fn pattern_snakes<P, S>(tx: &mut rp_pico::hal::pio::Tx<(P, S)>, len: usize, t: usize) where P: rp_pico::hal::pio::PIOExt, S: rp_pico::hal::pio::StateMachineIndex {
+fn pattern_snakes<P, S>(tx: &mut rp_pico::hal::pio::Tx<(P, S)>, len: usize, t: usize)
+where
+    P: rp_pico::hal::pio::PIOExt,
+    S: rp_pico::hal::pio::StateMachineIndex,
+{
     for i in 0..len {
         let x: usize = (i + (t >> 1)) % 64;
 
@@ -98,7 +106,7 @@ fn main() -> ! {
     let pin: rp_pico::hal::gpio::Pin<
         rp_pico::hal::gpio::bank0::Gpio2,
         FunctionPio0,
-        rp_pico::hal::gpio::PullDown
+        rp_pico::hal::gpio::PullDown,
     > = pins.gpio2.into_function();
 
     let program_with_defines = pio_proc::pio_file!(
@@ -110,17 +118,18 @@ fn main() -> ! {
 
     let (mut pio, sm0, _, _, _) = pac.PIO0.split(&mut pac.RESETS);
 
-    let (mut sm, _, mut tx) = rp_pico::hal::pio::PIOBuilder::from_program(pio.install(&program).unwrap())
-        .autopush(false)
-        .autopull(true)
-        .pull_threshold(24)
-        .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Left)
-        .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-        .out_pins(0, 0)
-        .set_pins(0, 0)
-        .side_set_pin_base(pin.id().num)
-        .buffers(rp_pico::hal::pio::Buffers::OnlyTx)
-        .build(sm0);
+    let (mut sm, _, mut tx) =
+        rp_pico::hal::pio::PIOBuilder::from_program(pio.install(&program).unwrap())
+            .autopush(false)
+            .autopull(true)
+            .pull_threshold(24)
+            .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Left)
+            .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
+            .out_pins(0, 0)
+            .set_pins(0, 0)
+            .side_set_pin_base(pin.id().num)
+            .buffers(rp_pico::hal::pio::Buffers::OnlyTx)
+            .build(sm0);
 
     // let cycles_per_bit: i32 = program_with_defines.public_defines.T1 + program_with_defines.public_defines.T2 + program_with_defines.public_defines.T3;
     sm.clock_divisor_fixed_point(15, 0);

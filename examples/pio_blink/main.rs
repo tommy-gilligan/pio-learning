@@ -5,13 +5,7 @@ use bsp::entry;
 use defmt::*;
 use defmt_rtt as _;
 use panic_probe as _;
-use rp2040_project_template::{
-    PioStateCopy,
-    SmStateCopy,
-    SM0_BASE,
-    SM1_BASE,
-    SM2_BASE
-};
+use rp2040_project_template::{PioStateCopy, SmStateCopy, SM0_BASE, SM1_BASE, SM2_BASE};
 
 use rp_pico as bsp;
 
@@ -32,16 +26,20 @@ fn blink_pin_forever<T, S>(
     program: &pio::Program<32>,
     sm: rp_pico::hal::pio::UninitStateMachine<(rp_pico::pac::PIO0, S)>,
     pin: rp_pico::hal::gpio::Pin<T, FunctionPio0, rp_pico::hal::gpio::PullDown>,
-    freq: u32
-) where T: rp_pico::hal::gpio::PinId, S: rp_pico::hal::pio::StateMachineIndex {
-    let (mut sm, _, mut tx) = rp_pico::hal::pio::PIOBuilder::from_program(pio.install(&program).unwrap())
-        .autopush(false)
-        .autopull(false)
-        .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-        .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-        .out_pins(0, 0)
-        .set_pins(pin.id().num, 1)
-        .build(sm);
+    freq: u32,
+) where
+    T: rp_pico::hal::gpio::PinId,
+    S: rp_pico::hal::pio::StateMachineIndex,
+{
+    let (mut sm, _, mut tx) =
+        rp_pico::hal::pio::PIOBuilder::from_program(pio.install(&program).unwrap())
+            .autopush(false)
+            .autopull(false)
+            .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
+            .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
+            .out_pins(0, 0)
+            .set_pins(pin.id().num, 1)
+            .build(sm);
 
     sm.set_pindirs([(pin.id().num, rp_pico::hal::pio::PinDir::Output)]);
     sm.start();

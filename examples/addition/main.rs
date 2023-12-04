@@ -5,11 +5,7 @@ use bsp::entry;
 use defmt::*;
 use defmt_rtt as _;
 use panic_probe as _;
-use rp2040_project_template::{
-    PioStateCopy,
-    SmStateCopy,
-    SM0_BASE
-};
+use rp2040_project_template::{PioStateCopy, SmStateCopy, SM0_BASE};
 
 use rp_pico as bsp;
 
