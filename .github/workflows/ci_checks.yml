@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 env:
   CARGO_TERM_COLOR: always
+  PICO_SDK_FETCH_FROM_GIT: true
 
 jobs:
   building:
@@ -33,6 +34,15 @@ jobs:
       - run: cargo install flip-link
       - run: cargo build --all
       - run: cargo build --all --release
+  compile_c:
+    name: Compile C
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: mkdir build
+      - run: cd build
+      - run: cmake ..
+      - run: make
   linting:
     name: Linting
     runs-on: ubuntu-latest
