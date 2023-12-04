@@ -27,3 +27,9 @@ a good order in which to approach these examples.
 - <https://github.com/rp-rs/rp-hal/blob/main/rp2040-hal/examples/pio_proc_blink.rs>
 - <https://github.com/rp-rs/rp-hal/blob/main/rp2040-hal/examples/pio_side_set.rs>
 - <https://github.com/rp-rs/rp-hal/blob/main/rp2040-hal/examples/pio_synchronized.rs>
+
+## Examples for which I don't have hardware
+- apa102
+- hub75
+- onewire
+- st7789_lcd
