@@ -10,20 +10,26 @@
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
 #include "blink.pio.h"
+#include "../debug.h"
 
 void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq);
 
 int main() {
-    setup_default_uart();
+    stdio_init_all();
 
     // todo get free sm
     PIO pio = pio0;
     uint offset = pio_add_program(pio, &blink_program);
     printf("Loaded program at %d\n", offset);
 
-    blink_pin_forever(pio, 0, offset, 0, 3);
+    sleep_ms(5000);
+    blink_pin_forever(pio, 0, offset, 2, 3);
     blink_pin_forever(pio, 1, offset, 6, 4);
     blink_pin_forever(pio, 2, offset, 11, 1);
+    print_sm_state(SM0_BASE);
+    print_sm_state(SM1_BASE);
+    print_sm_state(SM2_BASE);
+    print_pio_state();
 }
 
 void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq) {

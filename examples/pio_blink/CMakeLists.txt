@@ -7,7 +7,13 @@ pico_generate_pio_header(pio_blink ${CMAKE_CURRENT_LIST_DIR}/blink.pio)
 
 target_sources(pio_blink PRIVATE blink.c)
 
-target_link_libraries(pio_blink PRIVATE pico_stdlib hardware_pio)
+target_link_libraries(pio_blink PRIVATE
+        pico_stdlib
+        hardware_pio
+	json_maker
+        )
+pico_enable_stdio_usb(pio_blink 1)
+pico_enable_stdio_uart(pio_blink 0)
 pico_add_extra_outputs(pio_blink)
 
 # add url via pico_set_program_url

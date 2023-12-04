@@ -9,6 +9,7 @@
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
 #include "pwm.pio.h"
+#include "../debug.h"
 
 // Write `period` to the input shift register
 void pio_pwm_set_period(PIO pio, uint sm, uint32_t period) {
@@ -43,6 +44,10 @@ int main() {
     sm_config_set_sideset_pins(&c, PICO_DEFAULT_LED_PIN);
     pio_sm_init(pio, sm, offset, &c);
     pio_pwm_set_period(pio, sm, (1u << 16) - 1);
+
+    sleep_ms(5000);
+    print_sm_state(SM0_BASE);
+    print_pio_state();
 
     int level = 0;
     while (true) {

@@ -4,9 +4,9 @@ This is really just for my own learning.  From a brief gander, this seems to be
 a good order in which to approach these examples.
 
 1. [x] Hello
-1. [ ] Addition
-1. [ ] Blink
-1. [ ] PWM
+1. [x] Addition
+1. [o] Blink
+1. [o] PWM
 1. [ ] Square wave
 1. [ ] WS2812
 1. [ ] Clocked Input
