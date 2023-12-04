@@ -38,6 +38,8 @@ jobs:
     name: Compile C
     runs-on: ubuntu-latest
     steps:
+      - run: sudo apt update
+      - run: sudo apt install cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential
       - uses: actions/checkout@v3
       - run: mkdir build
       - run: cmake ..
