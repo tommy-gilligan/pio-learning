@@ -20,8 +20,8 @@ pub const SM2_BASE: u32 = 0x502000f8;
 pub const SM3_BASE: u32 = 0x50200110;
 
 impl SmStateCopy {
-    //! # Safety
-    //! Reads directly from registers to build up state
+    /// # Safety
+    /// Reads directly from registers to build up state
     pub unsafe fn new(base: u32) -> Self {
         Self {
             sm_clkdiv: core::ptr::read_volatile(base as *const u32),
@@ -56,8 +56,8 @@ pub struct PioStateCopy {
 }
 
 impl PioStateCopy {
-    //! # Safety
-    //! Reads directly from registers to build up state
+    /// # Safety
+    /// Reads directly from registers to build up state
     pub unsafe fn new() -> Self {
         Self {
             ctrl: core::ptr::read_volatile(0x50200000 as *const u32),
