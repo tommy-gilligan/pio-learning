@@ -40,9 +40,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: mkdir build
-      - run: cd build
       - run: cmake ..
+        working-directory: ./build
       - run: make
+        working-directory: ./build
   linting:
     name: Linting
     runs-on: ubuntu-latest
