@@ -7,7 +7,7 @@ a good order in which to approach these examples.
 1. [x] Addition
 1. [o] Blink
 1. [o] PWM
-1. [ ] Square wave
+1. [o] Square wave
 1. [ ] WS2812
 1. [ ] Clocked Input
 1. [ ] Manchester
