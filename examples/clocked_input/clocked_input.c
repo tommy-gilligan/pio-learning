@@ -48,7 +48,32 @@ int main() {
     PIO pio = pio0;
     uint offset = pio_add_program(pio, &clocked_input_program);
     uint sm = pio_claim_unused_sm(pio, true);
-    clocked_input_program_init(pio, sm, offset, PIO_INPUT_PIN_BASE);
+    pio_sm_config c = clocked_input_program_get_default_config(offset);
+
+    // Set the IN base pin to the provided `pin` parameter. This is the data
+    // pin, and the next-numbered GPIO is used as the clock pin.
+    sm_config_set_in_pins(&c, PIO_INPUT_PIN_BASE);
+    // Set the pin directions to input at the PIO
+    pio_sm_set_consecutive_pindirs(pio, sm, PIO_INPUT_PIN_BASE, 2, false);
+    // Connect these GPIOs to this PIO block
+    pio_gpio_init(pio, PIO_INPUT_PIN_BASE);
+    pio_gpio_init(pio, PIO_INPUT_PIN_BASE + 1);
+
+    // Shifting to left matches the customary MSB-first ordering of SPI.
+    sm_config_set_in_shift(
+        &c,
+        false, // Shift-to-right = false (i.e. shift to left)
+        true,  // Autopush enabled
+        8      // Autopush threshold = 8
+    );
+
+    // We only receive, so disable the TX FIFO to make the RX FIFO deeper.
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
+
+    // Load our configuration, and start the program from the beginning
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
+    sleep_ms(5000);
 
     // Make up some random data to send.
     static uint8_t txbuf[BUF_SIZE];

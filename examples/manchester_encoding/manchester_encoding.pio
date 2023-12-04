@@ -28,23 +28,6 @@ get_bit:
     jmp !x do_0            ; branch on it. Autopull refills the OSR when empty.
 .wrap
 
-% c-sdk {
-static inline void manchester_tx_program_init(PIO pio, uint sm, uint offset, uint pin, float div) {
-    pio_sm_set_pins_with_mask(pio, sm, 0, 1u << pin);
-    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
-    pio_gpio_init(pio, pin);
-
-    pio_sm_config c = manchester_tx_program_get_default_config(offset);
-    sm_config_set_sideset_pins(&c, pin);
-    sm_config_set_out_shift(&c, true, true, 32);
-    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
-    sm_config_set_clkdiv(&c, div);
-    pio_sm_init(pio, sm, offset + manchester_tx_offset_start, &c);
-
-    pio_sm_set_enabled(pio, sm, true);
-}
-%}
-
 .program manchester_rx
 
 ; Assumes line is idle low, first bit is 0
@@ -68,27 +51,3 @@ start_of_1:            ; We are 0.25 bits into a 1 - signal is 1
     in x, 1 [8]        ; Emit a 1, sleep 3/4 of a bit
     jmp pin start_of_0 ; If signal is 0 again, it's another 1 bit otherwise it's a 0
 .wrap
-
-% c-sdk {
-static inline void manchester_rx_program_init(PIO pio, uint sm, uint offset, uint pin, float div) {
-    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, false);
-    pio_gpio_init(pio, pin);
-
-    pio_sm_config c = manchester_rx_program_get_default_config(offset);
-    sm_config_set_in_pins(&c, pin); // for WAIT
-    sm_config_set_jmp_pin(&c, pin); // for JMP
-    sm_config_set_in_shift(&c, true, true, 32);
-    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
-    sm_config_set_clkdiv(&c, div);
-    pio_sm_init(pio, sm, offset, &c);
-
-    // X and Y are set to 0 and 1, to conveniently emit these to ISR/FIFO.
-    pio_sm_exec(pio, sm, pio_encode_set(pio_x, 1));
-    pio_sm_exec(pio, sm, pio_encode_set(pio_y, 0));
-    // Assume line is idle low, and first transmitted bit is 0. Put SM in a
-    // wait state before enabling. RX will begin once the first 0 symbol is
-    // detected.
-    pio_sm_exec(pio, sm, pio_encode_wait_pin(1, 0) | pio_encode_delay(2));
-    pio_sm_set_enabled(pio, sm, true);
-}
-%}
