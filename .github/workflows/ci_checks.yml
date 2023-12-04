@@ -40,7 +40,8 @@ jobs:
     steps:
       - run: sudo apt update
       - run: sudo apt install cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        submodules: 'recursive'
       - run: mkdir build
       - run: cmake ..
         working-directory: ./build
