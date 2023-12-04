@@ -5,14 +5,14 @@ a good order in which to approach these examples.
 
 1. [x] Hello
 1. [x] Addition
-1. [o] Blink
-1. [o] PWM
-1. [o] Square wave
-1. [ ] WS2812
-1. [ ] Clocked Input
+1. [o] Blink (fails config assertions)
+1. [o] PWM (fails config assertions)
+1. [o] Square wave (fails config assertions, fast & wrap not implemented)
+1. [o] WS2812 (clock wrong? parallel not implemented)
 1. [ ] Manchester
 1. [ ] Differential Manchester
 1. [ ] Logic Analyzer
+1. [ ] Clocked Input
 1. [ ] Quadrature Encoder
 1. [ ] UART TX
 1. [ ] UART RX
