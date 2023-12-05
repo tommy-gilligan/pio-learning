@@ -18,8 +18,8 @@ use bsp::hal::{
 };
 use rp_pico::hal::pio::PIOExt;
 
-const EXPECTED_SM: &'static str = "{\"sm_clkdiv\":65536,\"sm_execctrl\":1073872000,\"sm_shiftctrl\":786432,\"sm_addr\":28,\"sm_instr\":41026,\"sm_pinctrl\":1073767424}";
-const EXPECTED_PIO: &'static str = "{\"ctrl\":1,\"fstat\":251662080,\"fdebug\":16777216,\"flevel\":0,\"irq\":0,\"dbg_padout\":0,\"dbg_padoe\":33554432,\"dbg_cfginfo\":2098180}";
+const EXPECTED_SM: &'static str = "{\"sm_clkdiv\":65536,\"sm_execctrl\":1073872000,\"sm_shiftctrl\":786432,\"sm_addr\":25,\"sm_instr\":36992,\"sm_pinctrl\":1073767424}";
+const EXPECTED_PIO: &'static str = "{\"ctrl\":0,\"fstat\":251662080,\"fdebug\":0,\"flevel\":0,\"irq\":0,\"dbg_padout\":0,\"dbg_padoe\":33554432,\"dbg_cfginfo\":2098180}";
 
 fn pio_pwm_set_period<T, S>(
     pio: &mut rp_pico::hal::pio::PIO<rp_pico::pac::PIO0>,
@@ -63,6 +63,10 @@ where
         delay: 0,
         side_set: None,
     });
+
+    PioStateCopy::assert_eq(EXPECTED_PIO);
+    SmStateCopy::assert_eq(SM0_BASE, EXPECTED_SM);
+
     sm.start();
 
     tx
@@ -115,8 +119,6 @@ fn main() -> ! {
         pins.led.into_function(),
         (1 << 16) - 1,
     );
-    PioStateCopy::assert_eq(EXPECTED_PIO);
-    // SmStateCopy::assert_eq(SM0_BASE, EXPECTED_SM);
 
     loop {
         for level in 0..256 {

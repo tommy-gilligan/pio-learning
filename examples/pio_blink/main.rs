@@ -18,10 +18,14 @@ use bsp::hal::{
 };
 use rp_pico::hal::pio::PIOExt;
 
-const EXPECTED_SM: &'static str = "{\"sm_clkdiv\":65536,\"sm_execctrl\":130304,\"sm_shiftctrl\":786432,\"sm_addr\":28,\"sm_instr\":92,\"sm_pinctrl\":67108928}";
+const EXPECTED_SM_0: &'static str = "{\"sm_clkdiv\":65536,\"sm_execctrl\":130304,\"sm_shiftctrl\":786432,\"sm_addr\":24,\"sm_instr\":32928,\"sm_pinctrl\":67108928}";
+const EXPECTED_SM_1: &'static str = "{\"sm_clkdiv\":65536,\"sm_execctrl\":130304,\"sm_shiftctrl\":786432,\"sm_addr\":24,\"sm_instr\":32928,\"sm_pinctrl\":67109056}";
+const EXPECTED_SM_2: &'static str = "{\"sm_clkdiv\":65536,\"sm_execctrl\":130304,\"sm_shiftctrl\":786432,\"sm_addr\":24,\"sm_instr\":32928,\"sm_pinctrl\":67109216}";
+
 const EXPECTED_PIO: &'static str = "{\"ctrl\":7,\"fstat\":251662080,\"fdebug\":117440512,\"flevel\":0,\"irq\":0,\"dbg_padout\":2116,\"dbg_padoe\":2116,\"dbg_cfginfo\":2098180}";
 
 fn blink_pin_forever<T, S>(
+    base: u32,
     pio: &mut rp_pico::hal::pio::PIO<rp_pico::pac::PIO0>,
     program: &pio::Program<32>,
     sm: rp_pico::hal::pio::UninitStateMachine<(rp_pico::pac::PIO0, S)>,
@@ -37,11 +41,21 @@ fn blink_pin_forever<T, S>(
             .autopull(false)
             .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
             .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .out_pins(0, 0)
+            .side_set_pin_base(0)
             .set_pins(pin.id().num, 1)
+            .out_sticky(true)
+            .inline_out(None)
             .build(sm);
 
     sm.set_pindirs([(pin.id().num, rp_pico::hal::pio::PinDir::Output)]);
+
+    match base {
+        SM0_BASE => SmStateCopy::assert_eq(SM0_BASE, EXPECTED_SM_0),
+        SM1_BASE => SmStateCopy::assert_eq(SM1_BASE, EXPECTED_SM_1),
+        SM2_BASE => SmStateCopy::assert_eq(SM2_BASE, EXPECTED_SM_2),
+        _ => defmt::unimplemented!()
+    }
+
     sm.start();
 
     tx.write((133_000_000 / (2 * freq)) - 3);
@@ -87,14 +101,11 @@ fn main() -> ! {
     let (mut pio, sm0, sm1, sm2, _) = pac.PIO0.split(&mut pac.RESETS);
     info!("Loaded pio program\n");
 
-    blink_pin_forever(&mut pio, &program, sm0, pins.gpio2.into_function(), 3);
-    blink_pin_forever(&mut pio, &program, sm1, pins.gpio6.into_function(), 4);
-    blink_pin_forever(&mut pio, &program, sm2, pins.gpio11.into_function(), 1);
+    blink_pin_forever(SM0_BASE, &mut pio, &program, sm0, pins.gpio2.into_function(), 3);
+    blink_pin_forever(SM1_BASE, &mut pio, &program, sm1, pins.gpio6.into_function(), 4);
+    blink_pin_forever(SM2_BASE, &mut pio, &program, sm2, pins.gpio11.into_function(), 1);
 
     PioStateCopy::assert_eq(EXPECTED_PIO);
-    SmStateCopy::assert_eq(SM0_BASE, EXPECTED_SM);
-    // SmStateCopy::assert_eq(SM1_BASE, EXPECTED_SM);
-    // SmStateCopy::assert_eq(SM2_BASE, EXPECTED_SM);
 
     loop {}
 }
