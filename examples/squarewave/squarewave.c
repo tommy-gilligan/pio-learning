@@ -63,11 +63,11 @@ int main() {
     /// \end::setup_pins[]
 
     sleep_ms(5000);
+
     print_pio_state();
     print_sm_state(SM0_BASE);
+
     sleep_ms(1000);
-    // {"sm_clkdiv":163840,"sm_execctrl":126976,"sm_shiftctrl":786432,"sm_addr":0,"sm_instr":57473,"sm_pinctrl":67108928}
-    // {"ctrl":0,"fstat":251662080,"fdebug":0,"flevel":0,"irq":0,"dbg_padout":0,"dbg_padoe":0,"dbg_cfginfo":2098180}
 
     /// \tag::start_sm[]
     // Set the state machine running. The PIO CTRL register is global within a
@@ -77,6 +77,7 @@ int main() {
     hw_set_bits(&pio->ctrl, 1 << (PIO_CTRL_SM_ENABLE_LSB + 0));
     /// \end::start_sm[]
 
+    while (true) {
+    }
     return 0;
-
 }

@@ -5,11 +5,11 @@ a good order in which to approach these examples.
 
 1. [x] Hello
 1. [x] Addition
-1. [o] Blink (fails config assertions)
-1. [o] PWM (fails config assertions)
+1. [x] Blink (simplified to single SM)
+1. [x] PWM
 1. [o] Square wave (fails config assertions, fast & wrap not implemented)
 1. [o] WS2812 (clock wrong? parallel not implemented)
-1. [ ] Manchester
+1. [o] Manchester (off by a bit)
 1. [ ] Differential Manchester
 1. [ ] Logic Analyzer
 1. [ ] Clocked Input

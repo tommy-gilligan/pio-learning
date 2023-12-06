@@ -105,12 +105,12 @@ int main() {
     sm_config_set_clkdiv(&c, div);
 
     pio_sm_init(pio, sm, offset, &c);
-    pio_sm_set_enabled(pio, sm, true);
-
     sleep_ms(5000);
 
     print_pio_state();
     print_sm_state(SM0_BASE);
+
+    pio_sm_set_enabled(pio, sm, true);
 
     int t = 0;
     while (1) {
@@ -118,6 +118,7 @@ int main() {
         int dir = (rand() >> 30) & 1 ? 1 : -1;
         puts(pattern_table[pat].name);
         puts(dir == 1 ? "(forward)" : "(backward)");
+
         for (int i = 0; i < 1000; ++i) {
             pattern_table[pat].pat(NUM_PIXELS, t);
             sleep_ms(10);
