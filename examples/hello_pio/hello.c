@@ -25,10 +25,7 @@ int main() {
     // to remember this location!
     uint offset = pio_add_program(pio, &hello_program);
 
-    // Find a free state machine on our chosen PIO (erroring if there are
-    // none). Configure it to run our program, and start it, using the
-    // helper function we included in our .pio file.
-    uint sm = pio_claim_unused_sm(pio, true);
+    uint sm = 0;
     pio_sm_config c = hello_program_get_default_config(offset);
 
     // Map the state machine's OUT pin group to one pin, namely the `pin`
@@ -41,12 +38,14 @@ int main() {
 
     // Load our configuration, and jump to the start of the program
     pio_sm_init(pio, sm, offset, &c);
-    // Set the state machine running
-    pio_sm_set_enabled(pio, sm, true);
 
     sleep_ms(5000);
 
     print_pio_state();
+    print_sm_state(SM0_BASE);
+
+    // Set the state machine running
+    pio_sm_set_enabled(pio, sm, true);
 
     // The state machine is now running. Any value we push to its TX FIFO will
     // appear on the LED pin.

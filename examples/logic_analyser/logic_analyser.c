@@ -132,6 +132,7 @@ int main() {
 
     logic_analyser_init(pio, sm, CAPTURE_PIN_BASE, CAPTURE_PIN_COUNT, 1.f);
 
+    sleep_ms(2000);
     printf("Arming trigger\n");
     logic_analyser_arm(pio, sm, dma_chan, capture_buf, buf_size_words, CAPTURE_PIN_BASE, true);
 

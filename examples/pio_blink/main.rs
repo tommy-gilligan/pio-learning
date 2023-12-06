@@ -2,75 +2,48 @@
 #![no_main]
 
 use bsp::entry;
-use defmt::*;
 use defmt_rtt as _;
 use panic_probe as _;
-use rp2040_project_template::{PioStateCopy, SmStateCopy, SM0_BASE, SM1_BASE, SM2_BASE};
+use rp2040_project_template::{PioStateCopy, SmStateCopy, SM0_BASE};
 
 use rp_pico as bsp;
 
-use bsp::hal::gpio::{FunctionPio0, Pin};
+use bsp::hal::gpio::FunctionPio0;
 use bsp::hal::{
-    clocks::{init_clocks_and_plls, Clock},
+    clocks::init_clocks_and_plls,
     pac,
     sio::Sio,
     watchdog::Watchdog,
 };
 use rp_pico::hal::pio::PIOExt;
 
-const EXPECTED_SM_0: &'static str = "{\"sm_clkdiv\":65536,\"sm_execctrl\":130304,\"sm_shiftctrl\":786432,\"sm_addr\":24,\"sm_instr\":32928,\"sm_pinctrl\":67108928}";
-const EXPECTED_SM_1: &'static str = "{\"sm_clkdiv\":65536,\"sm_execctrl\":130304,\"sm_shiftctrl\":786432,\"sm_addr\":24,\"sm_instr\":32928,\"sm_pinctrl\":67109056}";
-const EXPECTED_SM_2: &'static str = "{\"sm_clkdiv\":65536,\"sm_execctrl\":130304,\"sm_shiftctrl\":786432,\"sm_addr\":24,\"sm_instr\":32928,\"sm_pinctrl\":67109216}";
+const EXPECTED_PIO: &'static str = r###"{
+  "ctrl":        "00000000000000000000000000000000",
+  "fstat":       "00001111000000000000111100000000",
+  "fdebug":      "00000000000000000000000000000000",
+  "flevel":      "00000000000000000000000000000000",
+  "irq":         "00000000000000000000000000000000",
+  "dbg_padout":  "00000000000000000000000000000000",
+  "dbg_padoe":   "00000000000000000000000000000100",
+  "dbg_cfginfo": "00000000001000000000010000000100"
+}"###;
 
-const EXPECTED_PIO: &'static str = "{\"ctrl\":7,\"fstat\":251662080,\"fdebug\":117440512,\"flevel\":0,\"irq\":0,\"dbg_padout\":2116,\"dbg_padoe\":2116,\"dbg_cfginfo\":2098180}";
-
-fn blink_pin_forever<T, S>(
-    base: u32,
-    pio: &mut rp_pico::hal::pio::PIO<rp_pico::pac::PIO0>,
-    program: &pio::Program<32>,
-    sm: rp_pico::hal::pio::UninitStateMachine<(rp_pico::pac::PIO0, S)>,
-    pin: rp_pico::hal::gpio::Pin<T, FunctionPio0, rp_pico::hal::gpio::PullDown>,
-    freq: u32,
-) where
-    T: rp_pico::hal::gpio::PinId,
-    S: rp_pico::hal::pio::StateMachineIndex,
-{
-    let (mut sm, _, mut tx) =
-        rp_pico::hal::pio::PIOBuilder::from_program(pio.install(&program).unwrap())
-            .autopush(false)
-            .autopull(false)
-            .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .side_set_pin_base(0)
-            .set_pins(pin.id().num, 1)
-            .out_sticky(true)
-            .inline_out(None)
-            .build(sm);
-
-    sm.set_pindirs([(pin.id().num, rp_pico::hal::pio::PinDir::Output)]);
-
-    match base {
-        SM0_BASE => SmStateCopy::assert_eq(SM0_BASE, EXPECTED_SM_0),
-        SM1_BASE => SmStateCopy::assert_eq(SM1_BASE, EXPECTED_SM_1),
-        SM2_BASE => SmStateCopy::assert_eq(SM2_BASE, EXPECTED_SM_2),
-        _ => defmt::unimplemented!()
-    }
-
-    sm.start();
-
-    tx.write((133_000_000 / (2 * freq)) - 3);
-}
+const EXPECTED_SM_0: &'static str = r###"{
+  "sm_clkdiv":    "00000000000000010000000000000000",
+  "sm_execctrl":  "00000000000000011111110100000000",
+  "sm_shiftctrl": "00000000000011000000000000000000",
+  "sm_addr":      "00000000000000000000000000011000",
+  "sm_instr":     "00000000000000001000000010100000",
+  "sm_pinctrl":   "00000100000000000000000001000000"
+}"###;
 
 #[entry]
 fn main() -> ! {
-    info!("Program start");
     let mut pac = pac::Peripherals::take().unwrap();
-    let core = pac::CorePeripherals::take().unwrap();
     let mut watchdog = Watchdog::new(pac.WATCHDOG);
     let sio = Sio::new(pac.SIO);
-
     let external_xtal_freq_hz = 12_000_000u32;
-    let clocks = init_clocks_and_plls(
+    init_clocks_and_plls(
         external_xtal_freq_hz,
         pac.XOSC,
         pac.CLOCKS,
@@ -81,8 +54,6 @@ fn main() -> ! {
     )
     .ok()
     .unwrap();
-
-    let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 
     let pins = bsp::Pins::new(
         pac.IO_BANK0,
@@ -98,14 +69,31 @@ fn main() -> ! {
     );
     let program = program_with_defines.program;
 
-    let (mut pio, sm0, sm1, sm2, _) = pac.PIO0.split(&mut pac.RESETS);
-    info!("Loaded pio program\n");
+    let (mut pio, sm0, _, _, _) = pac.PIO0.split(&mut pac.RESETS);
+    let pin: rp_pico::hal::gpio::Pin<
+        rp_pico::hal::gpio::bank0::Gpio2,
+        FunctionPio0,
+        rp_pico::hal::gpio::PullDown
+    > = pins.gpio2.into_function();
 
-    blink_pin_forever(SM0_BASE, &mut pio, &program, sm0, pins.gpio2.into_function(), 3);
-    blink_pin_forever(SM1_BASE, &mut pio, &program, sm1, pins.gpio6.into_function(), 4);
-    blink_pin_forever(SM2_BASE, &mut pio, &program, sm2, pins.gpio11.into_function(), 1);
+    let (mut sm, _, mut tx) =
+        rp_pico::hal::pio::PIOBuilder::from_program(pio.install(&program).unwrap())
+            .autopush(false)
+            .autopull(false)
+            .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
+            .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
+            .set_pins(pin.id().num, 1)
+            .build(sm0);
 
+    sm.set_pindirs([(pin.id().num, rp_pico::hal::pio::PinDir::Output)]);
+
+    SmStateCopy::assert_eq(SM0_BASE, EXPECTED_SM_0);
     PioStateCopy::assert_eq(EXPECTED_PIO);
+
+    sm.start();
+
+    let freq: u32 = 3;
+    tx.write((133_000_000 / (2 * freq)) - 3);
 
     loop {}
 }

@@ -18,12 +18,28 @@ use bsp::hal::{
 };
 use rp_pico::hal::pio::PIOExt;
 
-const EXPECTED_PIO: &'static str = "{\"ctrl\":1,\"fstat\":251662080,\"fdebug\":16777216,\"flevel\":0,\"irq\":0,\"dbg_padout\":0,\"dbg_padoe\":33554432,\"dbg_cfginfo\":2098180}";
-const EXPECTED_SM: &'static str = "{\"sm_clkdiv\":65536,\"sm_execctrl\":130688,\"sm_shiftctrl\":786432,\"sm_addr\":29,\"sm_instr\":32928,\"sm_pinctrl\":1048601}";
+const EXPECTED_PIO: &'static str = r###"{
+  "ctrl":         "00000000000000000000000000000000",
+  "fstat":        "00001111000000000000111100000000",
+  "fdebug":       "00000000000000000000000000000000",
+  "flevel":       "00000000000000000000000000000000",
+  "irq":          "00000000000000000000000000000000",
+  "dbg_padout":   "00000000000000000000000000000000",
+  "dbg_padoe":    "00000010000000000000000000000000",
+  "dbg_cfginfo":  "00000000001000000000010000000100"
+}"###;
+
+const EXPECTED_SM: &'static str = r###"{
+  "sm_clkdiv":    "00000000000000010000000000000000",
+  "sm_execctrl":  "00000000000000011111111010000000",
+  "sm_shiftctrl": "00000000000011000000000000000000",
+  "sm_addr":      "00000000000000000000000000011101",
+  "sm_instr":     "00000000000000001000000010100000",
+  "sm_pinctrl":   "00000000000100000000000000011001"
+}"###;
 
 #[entry]
 fn main() -> ! {
-    info!("Program start");
     let mut pac = pac::Peripherals::take().unwrap();
     let core = pac::CorePeripherals::take().unwrap();
     let mut watchdog = Watchdog::new(pac.WATCHDOG);
@@ -66,16 +82,17 @@ fn main() -> ! {
 
     let (mut sm, _, mut tx) = rp_pico::hal::pio::PIOBuilder::from_program(installed)
         .out_pins(led_pin_id, 1)
-        .set_pins(0, 0)
+        .set_pins(25, 0)
         .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
         .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
         .build(sm0);
 
     sm.set_pindirs([(led_pin_id, rp_pico::hal::pio::PinDir::Output)]);
-    sm.start();
 
     PioStateCopy::assert_eq(EXPECTED_PIO);
     SmStateCopy::assert_eq(SM0_BASE, EXPECTED_SM);
+
+    sm.start();
 
     loop {
         tx.write(1);

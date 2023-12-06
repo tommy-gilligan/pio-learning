@@ -19,6 +19,7 @@ const uint pin_rx = 3;
 
 int main() {
     stdio_init_all();
+    sleep_ms(5000);
 
     PIO pio = pio0;
     uint sm_tx = 0;
@@ -43,6 +44,8 @@ int main() {
 
     // Execute a blocking pull so that we maintain the initial line state until data is available
     pio_sm_exec(pio, sm_tx, pio_encode_pull(false, true));
+    print_sm_state(SM0_BASE);
+
     pio_sm_set_enabled(pio, sm_tx, true);
     pio_sm_set_consecutive_pindirs(pio, sm_rx, pin_rx, 1, false);
     pio_gpio_init(pio, pin_rx);
@@ -58,6 +61,8 @@ int main() {
     // X and Y are set to 0 and 1, to conveniently emit these to ISR/FIFO.
     pio_sm_exec(pio, sm_rx, pio_encode_set(pio_x, 1));
     pio_sm_exec(pio, sm_rx, pio_encode_set(pio_y, 0));
+    print_sm_state(SM1_BASE);
+    print_pio_state();
     pio_sm_set_enabled(pio, sm_rx, true);
 
     pio_sm_set_enabled(pio, sm_tx, false);
@@ -65,8 +70,6 @@ int main() {
     pio_sm_put_blocking(pio, sm_tx, 0x0ff0a55a);
     pio_sm_put_blocking(pio, sm_tx, 0x12345678);
     pio_sm_set_enabled(pio, sm_tx, true);
-
-    sleep_ms(5000);
 
     for (int i = 0; i < 3; ++i)
         printf("%08x\n", pio_sm_get_blocking(pio, sm_rx));

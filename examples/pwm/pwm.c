@@ -17,6 +17,11 @@ void pio_pwm_set_period(PIO pio, uint sm, uint32_t period) {
     pio_sm_put_blocking(pio, sm, period);
     pio_sm_exec(pio, sm, pio_encode_pull(false, false));
     pio_sm_exec(pio, sm, pio_encode_out(pio_isr, 32));
+
+    sleep_ms(5000);
+    print_sm_state(SM0_BASE);
+    print_pio_state();
+
     pio_sm_set_enabled(pio, sm, true);
 }
 
@@ -45,13 +50,9 @@ int main() {
     pio_sm_init(pio, sm, offset, &c);
     pio_pwm_set_period(pio, sm, (1u << 16) - 1);
 
-    sleep_ms(5000);
-    print_sm_state(SM0_BASE);
-    print_pio_state();
-
     int level = 0;
     while (true) {
-        printf("Level = %d\n", level);
+        // printf("Level = %d\n", level);
         pio_pwm_set_level(pio, sm, level * level);
         level = (level + 1) % 256;
         sleep_ms(10);

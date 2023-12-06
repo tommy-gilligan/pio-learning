@@ -20,6 +20,7 @@ void blink_pin_forever(int base, PIO pio, uint sm, uint offset, uint pin, uint f
     pio_sm_init(pio, sm, offset, &c);
 
     print_sm_state(base);
+    print_pio_state();
 
     pio_sm_set_enabled(pio, sm, true);
 
@@ -39,8 +40,9 @@ int main() {
     printf("Loaded program at %d\n", offset);
 
     sleep_ms(5000);
+
     blink_pin_forever(SM0_BASE, pio, 0, offset, 2, 3);
-    blink_pin_forever(SM1_BASE, pio, 1, offset, 6, 4);
-    blink_pin_forever(SM2_BASE, pio, 2, offset, 11, 1);
-    print_pio_state();
+
+    while (true) {
+    }
 }

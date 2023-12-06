@@ -24,6 +24,7 @@ int main() {
     PIO pio = pio0;
     uint sm_tx = 0;
     uint sm_rx = 1;
+    sleep_ms(5000);
 
     uint offset_tx = pio_add_program(pio, &manchester_tx_program);
     uint offset_rx = pio_add_program(pio, &manchester_rx_program);
@@ -41,6 +42,7 @@ int main() {
     sm_config_set_clkdiv(&c, 1.f);
     pio_sm_init(pio, sm_tx, offset_tx + manchester_tx_offset_start, &c);
 
+    print_sm_state(SM0_BASE);
     pio_sm_set_enabled(pio, sm_tx, true);
 
     pio_sm_set_consecutive_pindirs(pio, sm_rx, pin_rx, 1, false);
@@ -61,6 +63,8 @@ int main() {
     // wait state before enabling. RX will begin once the first 0 symbol is
     // detected.
     pio_sm_exec(pio, sm_rx, pio_encode_wait_pin(1, 0) | pio_encode_delay(2));
+    print_sm_state(SM1_BASE);
+    print_pio_state();
     pio_sm_set_enabled(pio, sm_rx, true);
 
     pio_sm_set_enabled(pio, sm_tx, false);
@@ -71,8 +75,9 @@ int main() {
 
     pio_sm_set_enabled(pio, sm_tx, true);
 
-    sleep_ms(5000);
-
     for (int i = 0; i < 3; ++i)
         printf("%08x\n", pio_sm_get_blocking(pio, sm_rx));
+
+    while (true) {
+    }
 }
