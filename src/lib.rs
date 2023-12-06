@@ -2,41 +2,86 @@
 
 use core::fmt;
 use defmt::Format;
-use serde::{Deserialize, Deserializer, Serialize, Serializer, de::{self, Visitor}};
+use serde::{
+    de::{self, Visitor},
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 
 #[derive(Format, Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct SmStateCopy {
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     sm_clkdiv: u32,
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     sm_execctrl: u32,
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     sm_shiftctrl: u32,
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     sm_addr: u32,
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     sm_instr: u32,
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     sm_pinctrl: u32,
 }
 
 #[derive(Format, Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct PioStateCopy {
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     ctrl: u32,
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     fstat: u32,
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     fdebug: u32,
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     flevel: u32,
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     irq: u32,
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     dbg_padout: u32,
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     dbg_padoe: u32,
-    #[serde(serialize_with = "bitstring_serialize", deserialize_with = "bitstring_deserialize")]
+    #[serde(
+        serialize_with = "bitstring_serialize",
+        deserialize_with = "bitstring_deserialize"
+    )]
     dbg_cfginfo: u32,
 }
 
@@ -45,7 +90,8 @@ unsafe fn value(address: usize) -> u32 {
 }
 
 unsafe fn bitstring(word: u32) -> serde_json_core::heapless::String<32> {
-    let mut result: serde_json_core::heapless::String<32> = serde_json_core::heapless::String::new();
+    let mut result: serde_json_core::heapless::String<32> =
+        serde_json_core::heapless::String::new();
 
     for i in 0..32 {
         let bit = if (((word << i) >> 31) & 1) == 1 {
@@ -123,7 +169,10 @@ impl<'de> Visitor<'de> for U32Visitor {
         formatter.write_str("an integer between -2^31 and 2^31")
     }
 
-    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E> where E: de::Error {
+    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
         let mut i: u32 = 0;
 
         for c in v.chars() {
@@ -136,12 +185,16 @@ impl<'de> Visitor<'de> for U32Visitor {
     }
 }
 
-fn bitstring_serialize<S>(t: &u32, s: S) -> Result<S::Ok, S::Error> where S: Serializer {
-    unsafe {
-        s.serialize_str(&bitstring(*t))
-    }
+fn bitstring_serialize<S>(t: &u32, s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    unsafe { s.serialize_str(&bitstring(*t)) }
 }
 
-fn bitstring_deserialize<'de, D>(d: D) -> Result<u32, D::Error> where D: Deserializer<'de> {
+fn bitstring_deserialize<'de, D>(d: D) -> Result<u32, D::Error>
+where
+    D: Deserializer<'de>,
+{
     d.deserialize_str(U32Visitor)
 }

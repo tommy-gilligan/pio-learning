@@ -9,12 +9,7 @@ use rp2040_project_template::{PioStateCopy, SmStateCopy, SM0_BASE};
 use rp_pico as bsp;
 
 use bsp::hal::gpio::FunctionPio0;
-use bsp::hal::{
-    clocks::init_clocks_and_plls,
-    pac,
-    sio::Sio,
-    watchdog::Watchdog,
-};
+use bsp::hal::{clocks::init_clocks_and_plls, pac, sio::Sio, watchdog::Watchdog};
 use rp_pico::hal::pio::PIOExt;
 
 const EXPECTED_PIO: &'static str = r###"{
@@ -73,7 +68,7 @@ fn main() -> ! {
     let pin: rp_pico::hal::gpio::Pin<
         rp_pico::hal::gpio::bank0::Gpio2,
         FunctionPio0,
-        rp_pico::hal::gpio::PullDown
+        rp_pico::hal::gpio::PullDown,
     > = pins.gpio2.into_function();
 
     let (mut sm, _, mut tx) =

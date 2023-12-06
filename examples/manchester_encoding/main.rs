@@ -167,8 +167,7 @@ fn main() -> ! {
     tx.write(0x12345678);
 
     for _ in 0..3 {
-        while rx.is_empty() {
-        }
+        while rx.is_empty() {}
         info!("{:#x}\n", rx.read().unwrap());
     }
 

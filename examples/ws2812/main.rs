@@ -16,10 +16,10 @@ use bsp::hal::{
     sio::Sio,
     watchdog::Watchdog,
 };
-use rp_pico::hal::pio::PIOExt;
 use rand::rngs::SmallRng;
 use rand::RngCore;
 use rand::{Rng, SeedableRng};
+use rp_pico::hal::pio::PIOExt;
 
 const EXPECTED_PIO: &'static str = r###"{
   "ctrl":        "00000000000000000000000000000000",
@@ -47,8 +47,7 @@ where
     P: rp_pico::hal::pio::PIOExt,
     S: rp_pico::hal::pio::StateMachineIndex,
 {
-    while tx.is_full() {
-    }
+    while tx.is_full() {}
     tx.write(pixel_grb << 8);
 }
 
@@ -197,7 +196,7 @@ fn main() -> ! {
     loop {
         let pat = small_rng.next_u32() % 4;
         let dir = if (small_rng.next_u32() & 1) == 0 {
-            1 
+            1
         } else {
             -1
         };
@@ -208,7 +207,7 @@ fn main() -> ! {
                 1 => pattern_random(&mut tx, NUM_PIXELS, t),
                 2 => pattern_sparkle(&mut tx, NUM_PIXELS, t),
                 3 => pattern_greys(&mut tx, NUM_PIXELS, t),
-                _ => defmt::unimplemented!()
+                _ => defmt::unimplemented!(),
             }
 
             delay.delay_ms(10);

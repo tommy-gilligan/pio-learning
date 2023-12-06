@@ -79,7 +79,7 @@ fn main() -> ! {
     let pin: rp_pico::hal::gpio::Pin<
         rp_pico::hal::gpio::bank0::Gpio25,
         FunctionPio0,
-        rp_pico::hal::gpio::PullDown
+        rp_pico::hal::gpio::PullDown,
     > = pins.led.into_function();
     let (mut sm, _, mut tx) =
         rp_pico::hal::pio::PIOBuilder::from_program(pio.install(&program).unwrap())

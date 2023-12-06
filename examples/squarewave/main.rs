@@ -83,10 +83,7 @@ fn main() -> ! {
 
     for (index, instruction) in program.code.iter().enumerate() {
         unsafe {
-            core::ptr::write_volatile(
-                (0x50200048 + index * 4) as *mut u32,
-                (*instruction) as u32
-            );
+            core::ptr::write_volatile((0x50200048 + index * 4) as *mut u32, (*instruction) as u32);
         }
     }
 
