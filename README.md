@@ -13,8 +13,7 @@ a good order in which to approach these examples.
 1. [o] Differential Manchester (fails config assertions)
 1. [o] Logic Analyzer (fails config assertions, resolution is wrong)
 1. [x] Clocked Input
-1. [ ] Quadrature Encoder
-1. [ ] UART TX
+1. [x] UART TX
 1. [ ] UART RX
 1. [ ] IR NEC
 1. [ ] I2C
@@ -33,3 +32,4 @@ a good order in which to approach these examples.
 - hub75
 - onewire
 - st7789_lcd
+- quadrature encoder
