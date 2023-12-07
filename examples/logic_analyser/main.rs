@@ -2,11 +2,11 @@
 #![no_main]
 
 use bsp::entry;
+use cortex_m::prelude::*;
 use defmt::*;
 use defmt_rtt as _;
 use panic_probe as _;
 use rp2040_project_template::{PioStateCopy, SmStateCopy, SM0_BASE, SM1_BASE};
-use cortex_m::prelude::*;
 
 use cortex_m::singleton;
 
@@ -19,8 +19,8 @@ use bsp::hal::{
     sio::Sio,
     watchdog::Watchdog,
 };
-use rp_pico::hal::pio::PIOExt;
 use rp_pico::hal::dma::{double_buffer, single_buffer, DMAExt};
+use rp_pico::hal::pio::PIOExt;
 
 const EXPECTED_SM0: &'static str = r###"{
   "sm_clkdiv": "00000000000000010000000000000000",
@@ -50,7 +50,9 @@ fn bits_packed_per_word(pin_count: u32) -> u32 {
 const CAPTURE_PIN_BASE: u32 = 16;
 const CAPTURE_PIN_COUNT: u8 = 2;
 const CAPTURE_N_SAMPLES: usize = 96;
-const TOTAL_SAMPLE_BITS: u32 = (CAPTURE_N_SAMPLES as u32 * CAPTURE_PIN_COUNT as u32) + (32 - (32 % CAPTURE_PIN_COUNT as u32)) - 1;
+const TOTAL_SAMPLE_BITS: u32 = (CAPTURE_N_SAMPLES as u32 * CAPTURE_PIN_COUNT as u32)
+    + (32 - (32 % CAPTURE_PIN_COUNT as u32))
+    - 1;
 const BUF_SIZE_WORDS: usize = (TOTAL_SAMPLE_BITS / 32 - (32 % CAPTURE_PIN_COUNT as u32)) as usize;
 
 #[entry]
@@ -112,20 +114,24 @@ fn main() -> ! {
     let (mut pio, sm0, _, _, _) = pac.PIO0.split(&mut pac.RESETS);
 
     let program = pio.install(&program).unwrap();
-    let program = program.set_wrap(pio::Wrap { source: 0, target: 0 }).unwrap();
+    let program = program
+        .set_wrap(pio::Wrap {
+            source: 0,
+            target: 0,
+        })
+        .unwrap();
     let offset = program.offset();
-    let (mut sm, rx, _) =
-        rp_pico::hal::pio::PIOBuilder::from_program(program)
-            .buffers(rp_pico::hal::pio::Buffers::OnlyRx)
-            .autopush(true)
-            .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .push_threshold(bits_packed_per_word(CAPTURE_PIN_COUNT as u32) as u8)
-            .in_pin_base(CAPTURE_PIN_BASE as u8)
-            .autopull(false)
-            .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .out_pins(0, 0)
-            .set_pins(0, 0)
-            .build(sm0);
+    let (mut sm, rx, _) = rp_pico::hal::pio::PIOBuilder::from_program(program)
+        .buffers(rp_pico::hal::pio::Buffers::OnlyRx)
+        .autopush(true)
+        .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
+        .push_threshold(bits_packed_per_word(CAPTURE_PIN_COUNT as u32) as u8)
+        .in_pin_base(CAPTURE_PIN_BASE as u8)
+        .autopull(false)
+        .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
+        .out_pins(0, 0)
+        .set_pins(0, 0)
+        .build(sm0);
 
     sm.set_clock_divisor(1f32);
 

@@ -76,9 +76,15 @@ fn main() -> ! {
     let mut small_rng = SmallRng::seed_from_u64(0x69420);
 
     // These are implicitly used by the spi driver if they are in the correct mode
-    let spi_mosi = pins.gpio3.into_function::<rp_pico::hal::gpio::FunctionSpi>();
-    let spi_miso = pins.gpio16.into_function::<rp_pico::hal::gpio::FunctionSpi>();
-    let spi_sclk = pins.gpio2.into_function::<rp_pico::hal::gpio::FunctionSpi>();
+    let spi_mosi = pins
+        .gpio3
+        .into_function::<rp_pico::hal::gpio::FunctionSpi>();
+    let spi_miso = pins
+        .gpio16
+        .into_function::<rp_pico::hal::gpio::FunctionSpi>();
+    let spi_sclk = pins
+        .gpio2
+        .into_function::<rp_pico::hal::gpio::FunctionSpi>();
     let spi = rp_pico::hal::spi::Spi::<_, _, _, 8>::new(pac.SPI0, (spi_mosi, spi_miso, spi_sclk));
     use rp_pico::hal::fugit::RateExtU32;
 
@@ -109,24 +115,21 @@ fn main() -> ! {
     let program = program_with_defines.program;
     let (mut pio, sm0, _, _, _) = pac.PIO0.split(&mut pac.RESETS);
     let program = pio.install(&program).unwrap();
-    let (mut sm, mut rx, _) =
-        rp_pico::hal::pio::PIOBuilder::from_program(program)
-            .autopush(true)
-            .push_threshold(8)
-            .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Left)
-            .autopull(false)
-            .buffers(rp_pico::hal::pio::Buffers::OnlyRx)
-            .in_pin_base(pin_4.id().num)
-            .set_pins(0, 0)
-            .build(sm0);
+    let (mut sm, mut rx, _) = rp_pico::hal::pio::PIOBuilder::from_program(program)
+        .autopush(true)
+        .push_threshold(8)
+        .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
+        .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Left)
+        .autopull(false)
+        .buffers(rp_pico::hal::pio::Buffers::OnlyTx)
+        .in_pin_base(pin_4.id().num)
+        .set_pins(0, 0)
+        .build(sm0);
 
-    sm.set_pindirs(
-        [
-            (pin_4.id().num, rp_pico::hal::pio::PinDir::Input),
-            (pin_5.id().num, rp_pico::hal::pio::PinDir::Input),
-        ]
-    );
+    sm.set_pindirs([
+        (pin_4.id().num, rp_pico::hal::pio::PinDir::Input),
+        (pin_5.id().num, rp_pico::hal::pio::PinDir::Input),
+    ]);
 
     SmStateCopy::assert_eq(SM0_BASE, EXPECTED_SM0);
     PioStateCopy::assert_eq(EXPECTED_PIO);
@@ -143,8 +146,7 @@ fn main() -> ! {
 
     println!("Reading back from RX FIFO:");
     for i in 0..BUF_SIZE {
-        while rx.is_empty() {
-        }
+        while rx.is_empty() {}
         let rxdata = rx.read().unwrap();
         if rxdata as u8 == txbuf[i] {
             println!("{:x} OK", rxdata);
@@ -153,7 +155,6 @@ fn main() -> ! {
         }
     }
     println!("Done.");
-
 
     loop {
         delay.delay_ms(10);

@@ -105,18 +105,17 @@ fn main() -> ! {
 
     let program = pio.install(&program_tx).unwrap();
     let offset = program.offset();
-    let (mut sm_tx, _, mut tx) =
-        rp_pico::hal::pio::PIOBuilder::from_program(program)
-            .autopull(true)
-            .pull_threshold(32)
-            .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .buffers(rp_pico::hal::pio::Buffers::OnlyTx)
-            .autopush(false)
-            .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .out_pins(0, 0)
-            .set_pins(0, 0)
-            .side_set_pin_base(pin_tx.id().num)
-            .build(sm0);
+    let (mut sm_tx, _, mut tx) = rp_pico::hal::pio::PIOBuilder::from_program(program)
+        .autopull(true)
+        .pull_threshold(32)
+        .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
+        .buffers(rp_pico::hal::pio::Buffers::OnlyTx)
+        .autopush(false)
+        .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
+        .out_pins(0, 0)
+        .set_pins(0, 0)
+        .side_set_pin_base(pin_tx.id().num)
+        .build(sm0);
     sm_tx.set_pins([(pin_tx.id().num, rp_pico::hal::pio::PinState::Low)]);
     sm_tx.set_clock_divisor(1f32);
     sm_tx.set_pindirs([(pin_tx.id().num, rp_pico::hal::pio::PinDir::Output)]);
@@ -124,7 +123,7 @@ fn main() -> ! {
     sm_tx.exec_instruction(pio::Instruction {
         operands: pio::InstructionOperands::JMP {
             condition: pio::JmpCondition::Always,
-            address: offset + start as u8
+            address: offset + start as u8,
         },
         delay: 0,
         side_set: None,
@@ -182,14 +181,11 @@ fn main() -> ! {
 
     let mut sm_tx = sm_tx.stop();
     sm_tx.drain_tx_fifo();
-    while tx.is_full() {
-    }
+    while tx.is_full() {}
     tx.write(0);
-    while tx.is_full() {
-    }
+    while tx.is_full() {}
     tx.write(0x0ff0a55a);
-    while tx.is_full() {
-    }
+    while tx.is_full() {}
     tx.write(0x12345678);
 
     sm_tx.start();
