@@ -6,13 +6,15 @@
 
 #include <stdio.h>
 #include "pico/stdlib.h"
+
 #include "hardware/pio.h"
 #include "hardware/timer.h"
+#include "hardware/clocks.h"
+#include "hardware/gpio.h"
 
 #include "quadrature_encoder.pio.h"
 #include "../debug.h"
 
-//
 // ---- quadrature encoder interface example
 //
 // the PIO program reads phase A/B of a quadrature encoder and increments or
@@ -31,6 +33,10 @@
 //
 // One advantage of this approach is that it requires zero CPU time to keep the
 // encoder count updated and because of that it supports very high step rates.
+
+// max_step_rate is used to lower the clock of the state machine to save power
+// if the application doesn't require a very high sampling rate. Passing zero
+// will set the clock to the maximum
 //
 
 int main() {
@@ -48,12 +54,39 @@ int main() {
     // we don't really need to keep the offset, as this program must be loaded
     // at offset 0
     pio_add_program(pio, &quadrature_encoder_program);
-    quadrature_encoder_program_init(pio, sm, PIN_AB, 0);
+    pio_sm_set_consecutive_pindirs(pio, sm, PIN_AB, 2, 0);
+    gpio_pull_up(PIN_AB);
+    gpio_pull_up(PIN_AB + 1);
+
+    pio_sm_config c = quadrature_encoder_program_get_default_config(0);
+
+    sm_config_set_in_pins(&c, PIN_AB); // for WAIT, IN
+    sm_config_set_jmp_pin(&c, PIN_AB); // for JMP
+    // shift to left, autopull disabled
+    sm_config_set_in_shift(&c, false, false, 32);
+    // don't join FIFO's
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_NONE);
+
+    sm_config_set_clkdiv(&c, 1.0);
+
+    pio_sm_init(pio, sm, 0, &c);
+    pio_sm_set_enabled(pio, sm, true);
 
     while (1) {
         // note: thanks to two's complement arithmetic delta will always
         // be correct even when new_value wraps around MAXINT / MININT
-        new_value = quadrature_encoder_get_count(pio, sm);
+        uint ret;
+        int n;
+    
+        // if the FIFO has N entries, we fetch them to drain the FIFO,
+        // plus one entry which will be guaranteed to not be stale
+        n = pio_sm_get_rx_fifo_level(pio, sm) + 1;
+        while (n > 0) {
+            ret = pio_sm_get_blocking(pio, sm);
+            n--;
+        }
+        new_value = ret;
+
         delta = new_value - old_value;
         old_value = new_value;
 
@@ -61,4 +94,3 @@ int main() {
         sleep_ms(100);
     }
 }
-

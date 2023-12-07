@@ -108,8 +108,7 @@ fn main() -> ! {
 
     loop {
         for byte in HELLO_WORLD.bytes() {
-            while tx.is_full() {
-            }
+            while tx.is_full() {}
             tx.write(byte as u32);
         }
         delay.delay_ms(1000);

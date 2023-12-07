@@ -14,7 +14,7 @@ a good order in which to approach these examples.
 1. [o] Logic Analyzer (fails config assertions, resolution is wrong)
 1. [x] Clocked Input
 1. [x] UART TX
-1. [ ] UART RX
+1. [x] UART RX (have not looked at 'mini' example)
 1. [ ] IR NEC
 1. [ ] I2C
 1. [ ] SPI

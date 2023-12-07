@@ -16,8 +16,8 @@ use bsp::hal::{
 };
 
 // UART related types
-use bsp::hal::uart::{DataBits, StopBits, UartConfig};
 use bsp::hal::fugit::RateExtU32;
+use bsp::hal::uart::{DataBits, StopBits, UartConfig};
 
 #[entry]
 fn main() -> ! {

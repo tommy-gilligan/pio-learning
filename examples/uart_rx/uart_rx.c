@@ -35,6 +35,7 @@ void core1_main() {
 
 int main() {
     stdio_init_all();
+    sleep_ms(2000);
     printf("Starting PIO UART RX example\n");
 
     // Set up the hard UART we're going to use to print characters
@@ -45,7 +46,28 @@ int main() {
     PIO pio = pio0;
     uint sm = 0;
     uint offset = pio_add_program(pio, &uart_rx_program);
-    uart_rx_program_init(pio, sm, offset, PIO_RX_PIN, SERIAL_BAUD);
+
+    pio_sm_set_consecutive_pindirs(pio, sm, PIO_RX_PIN, 1, false);
+    pio_gpio_init(pio, PIO_RX_PIN);
+    gpio_pull_up(PIO_RX_PIN);
+
+    pio_sm_config c = uart_rx_program_get_default_config(offset);
+    sm_config_set_in_pins(&c, PIO_RX_PIN); // for WAIT, IN
+    sm_config_set_jmp_pin(&c, PIO_RX_PIN); // for JMP
+    // Shift to right, autopush disabled
+    sm_config_set_in_shift(&c, true, false, 32);
+    // Deeper FIFO as we're not doing any TX
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
+    // SM transmits 1 bit per 8 execution cycles.
+    float div = (float)clock_get_hz(clk_sys) / (8 * SERIAL_BAUD);
+    sm_config_set_clkdiv(&c, div);
+    
+    pio_sm_init(pio, sm, offset, &c);
+
+    print_pio_state();
+    print_sm_state(SM0_BASE);
+
+    pio_sm_set_enabled(pio, sm, true);
 
     // Tell core 1 to print some text to uart1 as fast as it can
     multicore_launch_core1(core1_main);
@@ -54,7 +76,11 @@ int main() {
 
     // Echo characters received from PIO to the console
     while (true) {
-        char c = uart_rx_program_getc(pio, sm);
-        putchar(c);
+        // 8-bit read from the uppermost byte of the FIFO, as data is left-justified
+        io_rw_8 *rxfifo_shift = (io_rw_8*)&pio->rxf[sm] + 3;
+        while (pio_sm_is_rx_fifo_empty(pio, sm))
+            tight_loop_contents();
+
+        putchar((char)*rxfifo_shift);
     }
 }
