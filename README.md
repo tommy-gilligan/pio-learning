@@ -21,11 +21,13 @@ a good order in which to approach these examples.
 
 ## Resources
 
-- <https://github.com/rp-rs/rp-hal/blob/main/rp2040-hal/examples/pio_blink.rs>
-- <https://github.com/rp-rs/rp-hal/blob/main/rp2040-hal/examples/pio_dma.rs>
-- <https://github.com/rp-rs/rp-hal/blob/main/rp2040-hal/examples/pio_proc_blink.rs>
-- <https://github.com/rp-rs/rp-hal/blob/main/rp2040-hal/examples/pio_side_set.rs>
-- <https://github.com/rp-rs/rp-hal/blob/main/rp2040-hal/examples/pio_synchronized.rs>
+- `rp2040-hal` PIO examples
+    - <https://github.com/rp-rs/rp-hal/blob/main/rp2040-hal/examples/pio_blink.rs>
+    - <https://github.com/rp-rs/rp-hal/blob/main/rp2040-hal/examples/pio_dma.rs>
+    - <https://github.com/rp-rs/rp-hal/blob/main/rp2040-hal/examples/pio_proc_blink.rs>
+    - <https://github.com/rp-rs/rp-hal/blob/main/rp2040-hal/examples/pio_side_set.rs>
+    - <https://github.com/rp-rs/rp-hal/blob/main/rp2040-hal/examples/pio_synchronized.rs>
+- [RP2040 Datasheet](https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf)
 
 ## Examples for which I don't have hardware
 - apa102
