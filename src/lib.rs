@@ -176,12 +176,12 @@ impl<'de> Visitor<'de> for U32Visitor {
         let mut i: u32 = 0;
 
         for c in v.chars() {
+            i <<= 1;
             if c == '1' {
                 i |= 1;
             }
-            i <<= 1;
         }
-        Ok(i >> 1)
+        Ok(i)
     }
 }
 

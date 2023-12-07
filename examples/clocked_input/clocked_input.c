@@ -34,6 +34,7 @@
 
 int main() {
     stdio_init_all();
+    sleep_ms(5000);
 
     // Configure the SPI before PIO to avoid driving any glitches into the
     // state machine.
@@ -72,8 +73,11 @@ int main() {
 
     // Load our configuration, and start the program from the beginning
     pio_sm_init(pio, sm, offset, &c);
+
+    print_pio_state();
+    print_sm_state(SM0_BASE);
+
     pio_sm_set_enabled(pio, sm, true);
-    sleep_ms(5000);
 
     // Make up some random data to send.
     static uint8_t txbuf[BUF_SIZE];
@@ -98,4 +102,6 @@ int main() {
         printf("%02x %s\n", rxdata, rxdata == txbuf[i] ? "OK" : "FAIL");
     }
     puts("Done.");
+    while (true) {
+    }
 }

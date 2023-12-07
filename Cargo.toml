@@ -19,6 +19,7 @@ rp-pico = "0.8"
 pio-proc = "0.2.2"
 pio = "0.2"
 rand = { version = "0.8.5", default-features = false, features = ["small_rng"] }
+heapless = { version = "0.8.0", features = ["defmt-03"]}
 
 # cargo build/run
 [profile.dev]

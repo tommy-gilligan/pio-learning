@@ -19,20 +19,20 @@ use bsp::hal::{
 use rp_pico::hal::pio::PIOExt;
 
 const EXPECTED_SM0: &'static str = r###"{
-  "sm_clkdiv": "00000000000000010000000000000000",
-  "sm_execctrl": "01000000000000011111110100000000",
+  "sm_clkdiv": "00000000000000011001000000000000",
+  "sm_execctrl": "11000000000000011111101100000000",
   "sm_shiftctrl": "01000000000011100000000000000000",
-  "sm_addr": "00000000000000000000000000011110",
+  "sm_addr": "00000000000000000000000000010110",
   "sm_instr": "00000000000000000110000000100001",
   "sm_pinctrl": "01000000000000000000100000000000"
 }"###;
 
 const EXPECTED_SM1: &'static str = r###"{
-  "sm_clkdiv": "00000000000000010000000000000000",
-  "sm_execctrl": "10000011000000011001101110000000",
+  "sm_clkdiv": "00000000000000011001000000000000",
+  "sm_execctrl": "00000011000000010101100010000000",
   "sm_shiftctrl": "10000000000011010000000000000000",
-  "sm_addr": "00000000000000000000000000010100",
-  "sm_instr": "00000000000000000010000000100000",
+  "sm_addr": "00000000000000000000000000001100",
+  "sm_instr": "00000000000000000010101110100000",
   "sm_pinctrl": "00000000000000011000000000000000"
 }"###;
 
@@ -87,16 +87,16 @@ fn main() -> ! {
     > = pins.gpio3.into_function();
 
     let program_with_defines_tx = pio_proc::pio_file!(
-        "examples/manchester_encoding/manchester_encoding.pio",
-        select_program("manchester_tx"),
+        "examples/differential_manchester/differential_manchester.pio",
+        select_program("differential_manchester_tx"),
         options(max_program_size = 32)
     );
     let program_tx = program_with_defines_tx.program;
     let start = program_with_defines_tx.public_defines.start;
 
     let program_with_defines_rx = pio_proc::pio_file!(
-        "examples/manchester_encoding/manchester_encoding.pio",
-        select_program("manchester_rx"),
+        "examples/differential_manchester/differential_manchester.pio",
+        select_program("differential_manchester_rx"),
         options(max_program_size = 32)
     );
     let program_rx = program_with_defines_rx.program;
@@ -118,13 +118,21 @@ fn main() -> ! {
             .side_set_pin_base(pin_tx.id().num)
             .build(sm0);
     sm_tx.set_pins([(pin_tx.id().num, rp_pico::hal::pio::PinState::Low)]);
-    sm_tx.set_clock_divisor(1f32);
+    sm_tx.set_clock_divisor(125f32 / (16f32 * 5f32));
     sm_tx.set_pindirs([(pin_tx.id().num, rp_pico::hal::pio::PinDir::Output)]);
 
     sm_tx.exec_instruction(pio::Instruction {
         operands: pio::InstructionOperands::JMP {
             condition: pio::JmpCondition::Always,
             address: offset + start as u8
+        },
+        delay: 0,
+        side_set: None,
+    });
+    sm_tx.exec_instruction(pio::Instruction {
+        operands: pio::InstructionOperands::PULL {
+            if_empty: false,
+            block: true,
         },
         delay: 0,
         side_set: None,
@@ -145,7 +153,7 @@ fn main() -> ! {
             .jmp_pin(pin_rx.id().num)
             .buffers(rp_pico::hal::pio::Buffers::OnlyRx)
             .build(sm1);
-    sm_rx.set_clock_divisor(1f32);
+    sm_rx.set_clock_divisor(125f32 / (16f32 * 5f32));
     sm_rx.set_pindirs([(pin_rx.id().num, rp_pico::hal::pio::PinDir::Input)]);
 
     sm_rx.exec_instruction(pio::Instruction {
@@ -175,8 +183,9 @@ fn main() -> ! {
         side_set: None,
     });
 
-    SmStateCopy::assert_eq(SM1_BASE, EXPECTED_SM1);
     PioStateCopy::assert_eq(EXPECTED_PIO);
+    sm_rx.clear_fifos();
+    SmStateCopy::assert_eq(SM1_BASE, EXPECTED_SM1);
 
     sm_rx.start();
 

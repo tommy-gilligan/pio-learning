@@ -8,11 +8,11 @@ a good order in which to approach these examples.
 1. [x] Blink (simplified to single SM)
 1. [x] PWM
 1. [o] Square wave (fails config assertions, fast & wrap not implemented)
-1. [o] WS2812 (clock wrong? parallel not implemented)
-1. [o] Manchester (off by a bit)
-1. [ ] Differential Manchester
+1. [x] WS2812 (parallel not implemented, patterns)
+1. [x] Manchester
+1. [o] Differential Manchester (fails config assertions)
 1. [ ] Logic Analyzer
-1. [ ] Clocked Input
+1. [x] Clocked Input
 1. [ ] Quadrature Encoder
 1. [ ] UART TX
 1. [ ] UART RX

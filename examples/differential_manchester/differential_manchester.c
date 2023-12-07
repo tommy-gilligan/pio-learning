@@ -61,8 +61,10 @@ int main() {
     // X and Y are set to 0 and 1, to conveniently emit these to ISR/FIFO.
     pio_sm_exec(pio, sm_rx, pio_encode_set(pio_x, 1));
     pio_sm_exec(pio, sm_rx, pio_encode_set(pio_y, 0));
+
     print_sm_state(SM1_BASE);
     print_pio_state();
+
     pio_sm_set_enabled(pio, sm_rx, true);
 
     pio_sm_set_enabled(pio, sm_tx, false);
