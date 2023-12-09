@@ -26,60 +26,60 @@
 ; to sysclk / 10  (e.g., sysclk 125MHz, max step rate = 12.5 Msteps/sec)
 
 ; 00 state
-    JMP update    ; read 00
-    JMP decrement ; read 01
-    JMP increment ; read 10
-    JMP update    ; read 11
+    jmp update    ; read 00
+    jmp decrement ; read 01
+    jmp increment ; read 10
+    jmp update    ; read 11
 
 ; 01 state
-    JMP increment ; read 00
-    JMP update    ; read 01
-    JMP update    ; read 10
-    JMP decrement ; read 11
+    jmp increment ; read 00
+    jmp update    ; read 01
+    jmp update    ; read 10
+    jmp decrement ; read 11
 
 ; 10 state
-    JMP decrement ; read 00
-    JMP update    ; read 01
-    JMP update    ; read 10
-    JMP increment ; read 11
+    jmp decrement ; read 00
+    jmp update    ; read 01
+    jmp update    ; read 10
+    jmp increment ; read 11
 
 ; to reduce code size, the last 2 states are implemented in place and become the
 ; target for the other jumps
 
 ; 11 state
-    JMP update    ; read 00
-    JMP increment ; read 01
+    jmp update    ; read 00
+    jmp increment ; read 01
 decrement:
     ; note: the target of this instruction must be the next address, so that
     ; the effect of the instruction does not depend on the value of Y. The
     ; same is true for the "JMP X--" below. Basically "JMP Y--, <next addr>"
     ; is just a pure "decrement Y" instruction, with no other side effects
-    JMP Y--, update ; read 10
+    jmp y--, update ; read 10
 
     ; this is where the main loop starts
 .wrap_target
 update:
-    MOV ISR, Y      ; read 11
-    PUSH noblock
+    mov isr, y      ; read 11
+    push noblock
 
 sample_pins:
     ; we shift into ISR the last state of the 2 input pins (now in OSR) and
     ; the new state of the 2 pins, thus producing the 4 bit target for the
     ; computed jump into the correct action for this state. Both the PUSH
     ; above and the OUT below zero out the other bits in ISR
-    OUT ISR, 2
-    IN PINS, 2
+    out isr, 2
+    in pins, 2
 
     ; save the state in the OSR, so that we can use ISR for other purposes
-    MOV OSR, ISR
+    mov osr, isr
     ; jump to the correct state machine action
-    MOV PC, ISR
+    mov pc, isr
 
     ; the PIO does not have a increment instruction, so to do that we do a
     ; negate, decrement, negate sequence
 increment:
-    MOV Y, ~Y
-    JMP Y--, increment_cont
+    mov y, ~y
+    jmp y--, increment_cont
 increment_cont:
-    MOV Y, ~Y
+    mov y, ~y
 .wrap    ; the .wrap here avoids one jump instruction and saves a cycle too

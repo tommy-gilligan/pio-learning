@@ -47,6 +47,7 @@ int main() {
     const uint PIN_AB = 10;
 
     stdio_init_all();
+    sleep_ms(5000);
 
     PIO pio = pio0;
     const uint sm = 0;
@@ -70,6 +71,10 @@ int main() {
     sm_config_set_clkdiv(&c, 1.0);
 
     pio_sm_init(pio, sm, 0, &c);
+
+    print_sm_state(SM0_BASE);
+    print_pio_state();
+
     pio_sm_set_enabled(pio, sm, true);
 
     while (1) {
