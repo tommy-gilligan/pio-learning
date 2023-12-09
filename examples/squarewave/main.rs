@@ -105,7 +105,7 @@ fn main() -> ! {
     }
     SmStateCopy::assert_eq(SM0_BASE, EXPECTED_SM);
     PioStateCopy::assert_eq(EXPECTED_PIO);
-    
+
     unsafe {
         core::ptr::write_volatile(
             0x50200000 as *mut u32,

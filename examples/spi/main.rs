@@ -121,18 +121,14 @@ fn main() -> ! {
             .build(sm0);
 
     sm.set_clock_divisor(31.25f32);
-    sm.set_pindirs(
-        [
-            (pin_mosi_miso.id().num, rp_pico::hal::pio::PinDir::Output),
-            (pin_sck.id().num, rp_pico::hal::pio::PinDir::Output),
-        ]
-    );
-    sm.set_pins(
-        [
-            (pin_mosi_miso.id().num, rp_pico::hal::pio::PinState::Low),
-            (pin_sck.id().num, rp_pico::hal::pio::PinState::Low),
-        ]
-    );
+    sm.set_pindirs([
+        (pin_mosi_miso.id().num, rp_pico::hal::pio::PinDir::Output),
+        (pin_sck.id().num, rp_pico::hal::pio::PinDir::Output),
+    ]);
+    sm.set_pins([
+        (pin_mosi_miso.id().num, rp_pico::hal::pio::PinState::Low),
+        (pin_sck.id().num, rp_pico::hal::pio::PinState::Low),
+    ]);
 
     if cpol != 0 {
         pin_sck.set_output_override(rp_pico::hal::gpio::OutputOverride::Invert);
@@ -160,12 +156,10 @@ fn main() -> ! {
     println!("TX: {:?}", txbuf);
 
     for (s, d) in txbuf.iter().zip(rxbuf.iter_mut()) {
-        while tx.is_full() {
-        }
+        while tx.is_full() {}
         tx.write(*s as u32);
 
-        while rx.is_empty() {
-        }
+        while rx.is_empty() {}
         *d = rx.read().unwrap() as u8;
     }
 
@@ -177,6 +171,5 @@ fn main() -> ! {
         println!("\nOK\n");
     }
 
-    loop {
-    }
+    loop {}
 }

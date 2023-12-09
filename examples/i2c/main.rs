@@ -2,11 +2,11 @@
 #![no_main]
 
 use bsp::entry;
+use core::fmt;
 use defmt::*;
 use defmt_rtt as _;
 use panic_probe as _;
 use rp2040_project_template::{PioStateCopy, SmStateCopy, SM0_BASE};
-use core::fmt;
 
 use rp_pico as bsp;
 
@@ -40,9 +40,9 @@ const EXPECTED_PIO: &'static str = r###"{
 }"###;
 
 const PIO_I2C_ICOUNT_LSB: u16 = 10;
-const PIO_I2C_FINAL_LSB: u16  = 9;
-const PIO_I2C_DATA_LSB: u16   = 1;
-const PIO_I2C_NAK_LSB: u16    = 0;
+const PIO_I2C_FINAL_LSB: u16 = 9;
+const PIO_I2C_DATA_LSB: u16 = 1;
+const PIO_I2C_NAK_LSB: u16 = 0;
 
 const I2C_SC0_SD0: u16 = 63360;
 const I2C_SC0_SD1: u16 = 63361;
@@ -55,7 +55,9 @@ fn main() -> ! {
         "examples/i2c/i2c.pio",
         select_program("set_scl_sda"),
         options(max_program_size = 32)
-    ).program.code;
+    )
+    .program
+    .code;
     defmt::assert_eq!(I2C_SC0_SD0, code[0]);
     defmt::assert_eq!(I2C_SC0_SD1, code[1]);
     defmt::assert_eq!(I2C_SC1_SD0, code[2]);
@@ -110,34 +112,29 @@ fn main() -> ! {
     > = pins.gpio17.into_function();
     let installed_program = p.install(&program).unwrap();
     let offset = installed_program.offset();
-    let (mut sm, mut rx, mut tx) =
-        rp_pico::hal::pio::PIOBuilder::from_program(installed_program)
-            .buffers(rp_pico::hal::pio::Buffers::RxTx)
-            .autopush(true)
-            .autopull(true)
-            .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Left)
-            .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Left)
-            .pull_threshold(16)
-            .push_threshold(8)
-            .in_pin_base(pin_sda.id().num)
-            .jmp_pin(pin_sda.id().num)
-            .set_pins(pin_sda.id().num, 1)
-            .out_pins(pin_sda.id().num, 1)
-            .side_set_pin_base(pin_scl.id().num)
-            .build(sm0);
+    let (mut sm, mut rx, mut tx) = rp_pico::hal::pio::PIOBuilder::from_program(installed_program)
+        .buffers(rp_pico::hal::pio::Buffers::RxTx)
+        .autopush(true)
+        .autopull(true)
+        .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Left)
+        .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Left)
+        .pull_threshold(16)
+        .push_threshold(8)
+        .in_pin_base(pin_sda.id().num)
+        .jmp_pin(pin_sda.id().num)
+        .set_pins(pin_sda.id().num, 1)
+        .out_pins(pin_sda.id().num, 1)
+        .side_set_pin_base(pin_scl.id().num)
+        .build(sm0);
 
-    sm.set_pindirs(
-        [
-            (pin_sda.id().num, rp_pico::hal::pio::PinDir::Output),
-            (pin_scl.id().num, rp_pico::hal::pio::PinDir::Output),
-        ]
-    );
-    sm.set_pins(
-        [
-            (pin_sda.id().num, rp_pico::hal::pio::PinState::Low),
-            (pin_scl.id().num, rp_pico::hal::pio::PinState::Low),
-        ]
-    );
+    sm.set_pindirs([
+        (pin_sda.id().num, rp_pico::hal::pio::PinDir::Output),
+        (pin_scl.id().num, rp_pico::hal::pio::PinDir::Output),
+    ]);
+    sm.set_pins([
+        (pin_sda.id().num, rp_pico::hal::pio::PinState::Low),
+        (pin_scl.id().num, rp_pico::hal::pio::PinState::Low),
+    ]);
     pin_sda.set_output_override(rp_pico::hal::gpio::OutputOverride::Invert);
     pin_scl.set_output_override(rp_pico::hal::gpio::OutputOverride::Invert);
 
@@ -191,7 +188,10 @@ fn main() -> ! {
                     tx_remain -= 1;
 
                     if tx_remain == 0 {
-                        pio_i2c_put16(&mut tx, (0xff << 1) | (1 << PIO_I2C_FINAL_LSB) | (1 << PIO_I2C_NAK_LSB));
+                        pio_i2c_put16(
+                            &mut tx,
+                            (0xff << 1) | (1 << PIO_I2C_FINAL_LSB) | (1 << PIO_I2C_NAK_LSB),
+                        );
                     } else {
                         pio_i2c_put16(&mut tx, (0xff << 1) | (0));
                     }
@@ -230,14 +230,15 @@ fn main() -> ! {
     }
 
     println!("Done.\n");
-    loop {
-    }
+    loop {}
 }
 
 fn pio_i2c_stop<SM>(
     pio: &rp_pico::hal::pio::PIO<rp_pico::pac::PIO0>,
-    tx: &mut rp_pico::hal::pio::Tx<SM>
-) where SM: rp_pico::hal::pio::ValidStateMachine {
+    tx: &mut rp_pico::hal::pio::Tx<SM>,
+) where
+    SM: rp_pico::hal::pio::ValidStateMachine,
+{
     pio_i2c_put_or_err(pio, tx, 2 << PIO_I2C_ICOUNT_LSB);
     pio_i2c_put_or_err(pio, tx, I2C_SC1_SD0);
     pio_i2c_put_or_err(pio, tx, I2C_SC0_SD0);
@@ -246,36 +247,43 @@ fn pio_i2c_stop<SM>(
 
 fn pio_i2c_start<SM>(
     p: &rp_pico::hal::pio::PIO<rp_pico::pac::PIO0>,
-    tx: &mut rp_pico::hal::pio::Tx<SM>
-) where SM: rp_pico::hal::pio::ValidStateMachine {
+    tx: &mut rp_pico::hal::pio::Tx<SM>,
+) where
+    SM: rp_pico::hal::pio::ValidStateMachine,
+{
     pio_i2c_put_or_err(p, tx, 1 << PIO_I2C_ICOUNT_LSB);
     pio_i2c_put_or_err(p, tx, I2C_SC1_SD0);
     pio_i2c_put_or_err(p, tx, I2C_SC0_SD0);
 }
 
-fn pio_i2c_put16<SM>(tx: &mut rp_pico::hal::pio::Tx<SM>, data: u16) where SM: rp_pico::hal::pio::ValidStateMachine {
-    while tx.is_full() {
-    }
+fn pio_i2c_put16<SM>(tx: &mut rp_pico::hal::pio::Tx<SM>, data: u16)
+where
+    SM: rp_pico::hal::pio::ValidStateMachine,
+{
+    while tx.is_full() {}
     tx.write(data as u32);
 }
 
 fn pio_i2c_wait_idle<SM>(
     pio: &rp_pico::hal::pio::PIO<rp_pico::pac::PIO0>,
     tx: &mut rp_pico::hal::pio::Tx<SM>,
-) where SM: rp_pico::hal::pio::ValidStateMachine {
+) where
+    SM: rp_pico::hal::pio::ValidStateMachine,
+{
     // Finished when TX runs dry or SM hits an IRQ
     tx.clear_stalled_flag();
 
-    while !(tx.has_stalled() || pio.get_irq_raw() != 0) {
-    }
+    while !(tx.has_stalled() || pio.get_irq_raw() != 0) {}
 }
 
 // If I2C is ok, block and push data. Otherwise fall straight through.
 fn pio_i2c_put_or_err<SM>(
     pio: &rp_pico::hal::pio::PIO<rp_pico::pac::PIO0>,
     tx: &mut rp_pico::hal::pio::Tx<SM>,
-    data: u16
-) where SM: rp_pico::hal::pio::ValidStateMachine {
+    data: u16,
+) where
+    SM: rp_pico::hal::pio::ValidStateMachine,
+{
     while tx.is_full() {
         if pio.get_irq_raw() != 0 {
             return;
@@ -291,8 +299,10 @@ fn pio_i2c_put_or_err<SM>(
 fn pio_i2c_resume_after_error<SM, State>(
     pio: &rp_pico::hal::pio::PIO<rp_pico::pac::PIO0>,
     tx: &mut rp_pico::hal::pio::Tx<SM>,
-    sm: &mut rp_pico::hal::pio::StateMachine<SM, State>
-) where SM: rp_pico::hal::pio::ValidStateMachine {
+    sm: &mut rp_pico::hal::pio::StateMachine<SM, State>,
+) where
+    SM: rp_pico::hal::pio::ValidStateMachine,
+{
     sm.drain_tx_fifo();
     // sm.exec_instruction(0);
     // pio_sm_exec(

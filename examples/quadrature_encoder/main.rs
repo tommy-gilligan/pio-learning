@@ -100,12 +100,10 @@ fn main() -> ! {
             .set_pins(0, 0)
             .build(sm0);
 
-    sm.set_pindirs(
-        [
-            (pin_a.id().num, rp_pico::hal::pio::PinDir::Input),
-            (pin_b.id().num, rp_pico::hal::pio::PinDir::Input),
-        ]
-    );
+    sm.set_pindirs([
+        (pin_a.id().num, rp_pico::hal::pio::PinDir::Input),
+        (pin_b.id().num, rp_pico::hal::pio::PinDir::Input),
+    ]);
     sm.set_clock_divisor(1.0);
 
     PioStateCopy::assert_eq(EXPECTED_PIO);
@@ -116,8 +114,7 @@ fn main() -> ! {
     let mut old_value: i32 = 0;
 
     loop {
-        while rx.is_empty() {
-        }
+        while rx.is_empty() {}
         let ret: i32 = rx.read().unwrap() as i32;
         let delta: i32 = ret - old_value;
         old_value = ret;
