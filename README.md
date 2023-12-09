@@ -13,12 +13,12 @@ a good order in which to approach these examples.
 1. [x] UART TX
 1. [x] UART RX (have not looked at 'mini' example)
 1. [x] Quadrature Encoder
-1. [ ] SPI
 1. [ ] IR NEC
-1. [o] Differential Manchester (fails config assertions)
+1. [o] SPI
 1. [o] Logic Analyzer (fails config assertions, resolution is wrong)
-1. [o] Square wave (fails config assertions, fast & wrap not implemented)
 1. [o] I2C
+1. [o] Differential Manchester (fails config assertions)
+1. [o] Square wave (fails config assertions, fast & wrap not implemented)
 
 ## Resources
 
