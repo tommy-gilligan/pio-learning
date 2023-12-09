@@ -58,8 +58,8 @@ int main() {
     // as opposed to e.g. the processors.
     pio->sm[0].pinctrl =
             (1 << PIO_SM0_PINCTRL_SET_COUNT_LSB) |
-            (2 << PIO_SM0_PINCTRL_SET_BASE_LSB);
-    gpio_set_function(2, GPIO_FUNC_PIO0);
+            (25 << PIO_SM0_PINCTRL_SET_BASE_LSB);
+    gpio_set_function(25, GPIO_FUNC_PIO0);
     /// \end::setup_pins[]
 
     sleep_ms(5000);

@@ -35,7 +35,7 @@ const EXPECTED_SM: &'static str = r###"{
   "sm_shiftctrl": "00000000000011000000000000000000",
   "sm_addr": "00000000000000000000000000000000",
   "sm_instr": "00000000000000001110000010000001",
-  "sm_pinctrl": "00000100000000000000000001000000"
+  "sm_pinctrl": "00000100000000000000001100100000"
 }"###;
 
 #[entry]
@@ -93,11 +93,19 @@ fn main() -> ! {
             0x502000dc as *mut u32,
             (1 << 26) | ((pin.id().num as u32) << 5),
         );
+
+        // jump to start
+        core::ptr::write_volatile(0x502000d8 as *mut u32, 0);
+
+        // clear pindirs
+        core::ptr::write_volatile(0x502000d8 as *mut u32, 0b1110000010000000);
+
+        // clear pins
+        core::ptr::write_volatile(0x502000d8 as *mut u32, 0b1110000000000000);
     }
-
-    // SmStateCopy::assert_eq(SM0_BASE, EXPECTED_SM);
-    // PioStateCopy::assert_eq(EXPECTED_PIO);
-
+    SmStateCopy::assert_eq(SM0_BASE, EXPECTED_SM);
+    PioStateCopy::assert_eq(EXPECTED_PIO);
+    
     unsafe {
         core::ptr::write_volatile(
             0x50200000 as *mut u32,
