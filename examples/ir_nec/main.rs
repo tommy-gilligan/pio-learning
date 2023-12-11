@@ -2,59 +2,231 @@
 #![no_main]
 
 use bsp::entry;
-use defmt::*;
-use defmt_rtt as _;
-use panic_probe as _;
-use rp2040_project_template::{PioStateCopy, SmStateCopy, SM0_BASE, SM1_BASE, SM2_BASE};
-
-use rp_pico as bsp;
-
-use bsp::hal::gpio::FunctionPio0;
 use bsp::hal::{
     clocks::{init_clocks_and_plls, Clock},
+    gpio::{FunctionPio0, Pin, PinId, PullDown},
     pac,
+    pio::{
+        Buffers, PIOBuilder, PIOExt, PinDir, PinState, Rx, ShiftDirection, StateMachineIndex, Tx,
+        UninitStateMachine, PIO,
+    },
     sio::Sio,
     watchdog::Watchdog,
 };
-use rp_pico::hal::pio::PIOExt;
+use defmt::*;
+use defmt_rtt as _;
+use embedded_io::{Error, ErrorKind, ErrorType, Read, ReadReady, Write, WriteReady};
+use panic_probe as _;
+use rp_pico as bsp;
 
-const EXPECTED_PIO: &'static str = r###"{
-  "ctrl": "00000000000000000000000000000011",
-  "fstat": "00001111000001000000111100000010",
-  "fdebug": "00000010000000000000000000000000",
-  "flevel": "00000000000000000000000000000000",
-  "irq": "00000000000000000000000000000000",
-  "dbg_padout": "00000000000000000000000000000000",
-  "dbg_padoe": "00000000000000000100000000000000",
-  "dbg_cfginfo": "00000000001000000000010000000100"
-}"###;
+struct Reader<P, SM>
+where
+    P: PIOExt,
+    SM: StateMachineIndex,
+{
+    rx: Rx<(P, SM)>,
+}
 
-const EXPECTED_SM_0: &'static str = r###"{
-  "sm_clkdiv": "00000011001100011001011100000000",
-  "sm_execctrl": "00000000000000011111110110000000",
-  "sm_shiftctrl": "00000000000011000000000000000000",
-  "sm_addr": "00000000000000000000000000011011",
-  "sm_instr": "00000000000000001110000000110100",
-  "sm_pinctrl": "00000100000000000000000111000000"
-}"###;
+struct Writer<P, SmControl>
+where
+    P: PIOExt,
+    SmControl: StateMachineIndex,
+{
+    tx: Tx<(P, SmControl)>,
+}
 
-const EXPECTED_SM_1: &'static str = r###"{
-  "sm_clkdiv": "10001001010101000100000000000000",
-  "sm_execctrl": "00000000000000011010100000000000",
-  "sm_shiftctrl": "01000000000011000000000000000000",
-  "sm_addr": "00000000000000000000000000010000",
-  "sm_instr": "00000000000000001000000010100000",
-  "sm_pinctrl": "00000000000000000000000000000000"
-}"###;
+impl<P, SmControl> ErrorType for Writer<P, SmControl>
+where
+    P: PIOExt,
+    SmControl: StateMachineIndex,
+{
+    type Error = MyError;
+}
 
-const EXPECTED_SM_2: &'static str = r###"{
-  "sm_clkdiv": "00011011011101110100000000000000",
-  "sm_execctrl": "00001111000000001111001110000000",
-  "sm_shiftctrl": "10000000000011010000000000000000",
-  "sm_addr": "00000000000000000000000000000111",
-  "sm_instr": "00000000000000001110000000111110",
-  "sm_pinctrl": "00000000000001111000000000000000"
-}"###;
+impl<P, SmControl> WriteReady for Writer<P, SmControl>
+where
+    P: PIOExt,
+    SmControl: StateMachineIndex,
+{
+    fn write_ready(&mut self) -> Result<bool, Self::Error> {
+        Ok(!self.tx.is_full())
+    }
+}
+
+impl<P, SmControl> Write for Writer<P, SmControl>
+where
+    P: PIOExt,
+    SmControl: StateMachineIndex,
+{
+    fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        if buf.len() >= 2 {
+            // create a 32-bit frame and add it to the transmit FIFO
+            let tx_frame: u32 = (buf[0] as u32)
+                | (((buf[0] as u32 ^ 0xff) << 8) as u32)
+                | (((buf[1] as u32) << 16) as u32)
+                | (((buf[1] as u32 ^ 0xff) << 24) as u32);
+
+            self.tx.write(tx_frame);
+            Ok(2)
+        } else {
+            Err(MyError)
+        }
+    }
+
+    fn flush(&mut self) -> Result<(), Self::Error> {
+        while !self.tx.is_empty() {}
+        Ok(())
+    }
+}
+
+impl<P, SM> Reader<P, SM>
+where
+    P: PIOExt,
+    SM: StateMachineIndex,
+{
+    pub fn new<PIN>(
+        pio: &mut PIO<P>,
+        sm: UninitStateMachine<(P, SM)>,
+        pin: Pin<PIN, FunctionPio0, PullDown>,
+    ) -> Self
+    where
+        P: PIOExt,
+        SM: StateMachineIndex,
+        PIN: PinId,
+    {
+        let program_with_defines = pio_proc::pio_file!(
+            "examples/ir_nec/nec_receive.pio",
+            select_program("nec_receive"),
+            options(max_program_size = 32)
+        );
+        let program = program_with_defines.program;
+        let (mut sm, rx, _) = PIOBuilder::from_program(pio.install(&program).unwrap())
+            .buffers(Buffers::OnlyRx)
+            .push_threshold(32)
+            .autopush(true)
+            .out_shift_direction(ShiftDirection::Right)
+            .in_shift_direction(ShiftDirection::Right)
+            .in_pin_base(pin.id().num)
+            .jmp_pin(pin.id().num)
+            .set_pins(0, 0)
+            .build(sm);
+
+        sm.set_clock_divisor(7031.25);
+        sm.set_pindirs([(pin.id().num, PinDir::Input)]);
+        sm.start();
+
+        Self { rx }
+    }
+}
+
+#[derive(Debug)]
+struct MyError;
+
+impl Error for MyError {
+    fn kind(&self) -> ErrorKind {
+        ErrorKind::Other
+    }
+}
+
+impl<P, SM> ErrorType for Reader<P, SM>
+where
+    P: PIOExt,
+    SM: StateMachineIndex,
+{
+    type Error = MyError;
+}
+
+impl<P, SM> Read for Reader<P, SM>
+where
+    P: PIOExt,
+    SM: StateMachineIndex,
+{
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
+        let rx_frame: RxFrame = unsafe {
+            RxFrameWrapper {
+                raw: self.rx.read().unwrap(),
+            }
+            .decoded
+        };
+
+        if rx_frame.address == (rx_frame.inverted_address ^ 0xff)
+            && rx_frame.data == (rx_frame.inverted_data ^ 0xff)
+        {
+            buf[0] = rx_frame.address;
+            buf[1] = rx_frame.data;
+            Ok(2)
+        } else {
+            Err(MyError)
+        }
+    }
+}
+
+impl<P, SM> ReadReady for Reader<P, SM>
+where
+    P: PIOExt,
+    SM: StateMachineIndex,
+{
+    fn read_ready(&mut self) -> Result<bool, Self::Error> {
+        Ok(!self.rx.is_empty())
+    }
+}
+
+impl<P, SmControl> Writer<P, SmControl>
+where
+    P: PIOExt,
+    SmControl: StateMachineIndex,
+{
+    pub fn new<PIN, SmBurst>(
+        pio: &mut PIO<P>,
+        sm_burst: UninitStateMachine<(P, SmBurst)>,
+        sm_control: UninitStateMachine<(P, SmControl)>,
+        pin: Pin<PIN, FunctionPio0, PullDown>,
+    ) -> Self
+    where
+        P: PIOExt,
+        SmBurst: StateMachineIndex,
+        SmControl: StateMachineIndex,
+        PIN: PinId,
+    {
+        let program_with_defines = pio_proc::pio_file!(
+            "examples/ir_nec/nec_carrier_burst.pio",
+            select_program("nec_carrier_burst"),
+            options(max_program_size = 32)
+        );
+        let program = program_with_defines.program;
+        let (mut sm, _, _) = PIOBuilder::from_program(pio.install(&program).unwrap())
+            .out_shift_direction(ShiftDirection::Right)
+            .in_shift_direction(ShiftDirection::Right)
+            .set_pins(pin.id().num, 1)
+            .build(sm_burst);
+
+        sm.set_clock_divisor(
+            125_000_000.0 / (40.222e3 * program_with_defines.public_defines.TICKS_PER_LOOP as f32),
+        );
+        sm.set_pindirs([(pin.id().num, PinDir::Output)]);
+        sm.set_pins([(pin.id().num, PinState::Low)]);
+        sm.start();
+
+        let program_with_defines = pio_proc::pio_file!(
+            "examples/ir_nec/nec_carrier_control.pio",
+            select_program("nec_carrier_control"),
+            options(max_program_size = 32)
+        );
+        let program = program_with_defines.program;
+        let (mut sm, _, tx) = PIOBuilder::from_program(pio.install(&program).unwrap())
+            .buffers(Buffers::OnlyTx)
+            .pull_threshold(32)
+            .autopull(false)
+            .out_shift_direction(ShiftDirection::Right)
+            .in_shift_direction(ShiftDirection::Right)
+            .set_pins(0, 0)
+            .build(sm_control);
+        sm.set_clock_divisor(35156.25);
+        sm.start();
+
+        Self { tx }
+    }
+}
 
 #[entry]
 fn main() -> ! {
@@ -84,132 +256,31 @@ fn main() -> ! {
         sio.gpio_bank0,
         &mut pac.RESETS,
     );
-    let tx_pin: rp_pico::hal::gpio::Pin<
-        rp_pico::hal::gpio::bank0::Gpio14,
-        FunctionPio0,
-        rp_pico::hal::gpio::PullDown,
-    > = pins.gpio14.into_function();
-
-    // TODO: needs to disable pull
-    let rx_pin: rp_pico::hal::gpio::Pin<
-        rp_pico::hal::gpio::bank0::Gpio15,
-        FunctionPio0,
-        rp_pico::hal::gpio::PullDown,
-    > = pins.gpio15.into_function();
-
-    let program_with_defines = pio_proc::pio_file!(
-        "examples/ir_nec/nec_carrier_burst.pio",
-        select_program("nec_carrier_burst"),
-        options(max_program_size = 32)
-    );
-    let program = program_with_defines.program;
+    let tx_pin = pins.gpio14.into_function();
+    let rx_pin = pins.gpio15.into_function();
 
     let (mut pio, sm0, sm1, sm2, _) = pac.PIO0.split(&mut pac.RESETS);
 
-    let (mut sm, _, _) =
-        rp_pico::hal::pio::PIOBuilder::from_program(pio.install(&program).unwrap())
-            .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .set_pins(tx_pin.id().num, 1)
-            .build(sm0);
-
-    sm.set_clock_divisor(
-        125_000_000.0 / (38.222e3 * program_with_defines.public_defines.TICKS_PER_LOOP as f32),
-    );
-    sm.set_pindirs([(tx_pin.id().num, rp_pico::hal::pio::PinDir::Output)]);
-    sm.set_pins([(tx_pin.id().num, rp_pico::hal::pio::PinState::Low)]);
-
-    SmStateCopy::assert_eq(SM0_BASE, EXPECTED_SM_0);
-    // PioStateCopy::assert_eq(EXPECTED_PIO);
-
-    sm.start();
-
-    let program_with_defines = pio_proc::pio_file!(
-        "examples/ir_nec/nec_carrier_control.pio",
-        select_program("nec_carrier_control"),
-        options(max_program_size = 32)
-    );
-    let program = program_with_defines.program;
-
-    let (mut sm, _, mut tx) =
-        rp_pico::hal::pio::PIOBuilder::from_program(pio.install(&program).unwrap())
-            .buffers(rp_pico::hal::pio::Buffers::OnlyTx)
-            .pull_threshold(32)
-            .autopull(false)
-            .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .set_pins(0, 0)
-            .build(sm1);
-
-    sm.set_clock_divisor(35156.25);
-
-    SmStateCopy::assert_eq(SM1_BASE, EXPECTED_SM_1);
-    // PioStateCopy::assert_eq(EXPECTED_PIO);
-    sm.start();
-
-    let program_with_defines = pio_proc::pio_file!(
-        "examples/ir_nec/nec_receive.pio",
-        select_program("nec_receive"),
-        options(max_program_size = 32)
-    );
-    let program = program_with_defines.program;
-
-    let (mut sm, mut rx, _) =
-        rp_pico::hal::pio::PIOBuilder::from_program(pio.install(&program).unwrap())
-            .buffers(rp_pico::hal::pio::Buffers::OnlyRx)
-            .push_threshold(32)
-            .autopush(true)
-            .out_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .in_shift_direction(rp_pico::hal::pio::ShiftDirection::Right)
-            .in_pin_base(rx_pin.id().num)
-            .jmp_pin(rx_pin.id().num)
-            .set_pins(0, 0)
-            .build(sm2);
-
-    sm.set_clock_divisor(7031.25);
-    sm.set_pindirs([(rx_pin.id().num, rp_pico::hal::pio::PinDir::Input)]);
-
-    SmStateCopy::assert_eq(SM2_BASE, EXPECTED_SM_2);
-    PioStateCopy::assert_eq(EXPECTED_PIO);
-    sm.start();
+    let mut reader = Reader::new(&mut pio, sm2, rx_pin);
+    let mut writer = Writer::new(&mut pio, sm0, sm1, tx_pin);
 
     let tx_address: u8 = 0x00;
     let mut tx_data: u8 = 0x00;
 
     loop {
-        // create a 32-bit frame and add it to the transmit FIFO
-        let tx_frame: u32 = (tx_address as u32)
-            | (((tx_address as u32 ^ 0xff) << 8) as u32)
-            | (((tx_data as u32) << 16) as u32)
-            | (((tx_data as u32 ^ 0xff) << 24) as u32);
+        let buf = [tx_address, tx_data];
+        writer.write(&buf).unwrap();
+        println!("sent: {:x}, {:x}", tx_address, tx_data);
 
-        tx.write(tx_frame);
-        println!("\nsent: {:x}, {:x}", tx_address, tx_data);
-        delay.delay_ms(100);
+        while !reader.read_ready().unwrap() {}
+        let mut buf: [u8; 2] = [0; 2];
+        reader.read(&mut buf).unwrap();
+        println!("received: {:x}, {:x}", buf[0], buf[1]);
 
-        while !rx.is_empty() {
-            let rx_frame: RxFrame = unsafe {
-                RxFrameWrapper {
-                    raw: rx.read().unwrap(),
-                }
-                .decoded
-            };
-
-            if rx_frame.address != (rx_frame.inverted_address ^ 0xff)
-                || rx_frame.data != (rx_frame.inverted_data ^ 0xff)
-            {
-                println!("\treceived: {:x}", rx_frame);
-            } else {
-                println!("\treceived: {:x}, {:x}", rx_frame.address, rx_frame.data);
-            }
-        }
-
-        delay.delay_ms(900);
-        tx_data += 1;
+        delay.delay_ms(30);
+        tx_data = tx_data.wrapping_add(1);
     }
 }
-
-use defmt::Format;
 
 #[derive(Format, Debug, Copy, Clone)]
 #[repr(C)]
